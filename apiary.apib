@@ -1,5 +1,43 @@
 FORMAT: 1A
-HOST: https://accounts.pdk.io/api/v1
+HOST: https://accounts.pdk.io/oauth2
 
 # PDK Auth API
 The PDK Auth API is a collection of centralized authentication and authorization endpoints for initiating and managing secure interaction with the suite of PDK APIs.
+
+The Auth API implements a number of standards conforming flows and grants associated with the [OpenID Connect](http://openid.net/connect/) and [OAuth 2.0](http://oauth.net/2/) authentication and authorization standards.
+Being familiar with and referencing these standards will be very helpful in understanding the implementation here.
+
+All requests to this API must be protected by SSL, all URLs in this API are availble solely through HTTPS; HTTP requests are refused.
+
+# Client Setup
+Before your application can use the system to authenticate users, it must be registered with PDK and assigned a unique `client_id` and `client_secret`.
+If you are interested in creating an application that interacts with the PDK APIs, please contact us for more information.
+
+# Discovery Document
+The OpenID Connect standard includes a number of endpoints for authentication, requesting tokens, public keys, and other configuration information.
+The specification describes a method for dynamically discoverying this information through the use of a discovery document. The discovery document for the PDK Auth API can be found at:
+
+`https://accounts.pdk.io/.well-known/openid-configuration`
+
+Here is an example of the discovery document formatted as defined in the [OpenID Connect Discovery 1.0](http://openid.net/specs/openid-connect-discovery-1_0.html#ProviderMetadata) standard.
+While this is a recent copy of the actual document, the values may change.
+
+    {
+     "issuer": "accounts.pdk.io",
+     "authorization_endpoint": "https://accounts.pdk.io/oauth2/auth",
+     "token_endpoint": "https://accounts.pdk.io/oauth2/token",
+     "userinfo_endpoint": "https://accounts.pdk.io/api/v1/users/me/openIdConnect",
+     "revocation_endpoint": "https://accounts.pdk.io/oauth2/revoke",
+     "jwks_uri": "https://accounts.pdk.io/oauth2/certs",
+     "response_types_supported": [
+      "code", "token", "id_token",
+      "code token", "code id_token", "token id_token", "code token id_token",
+      "none"
+     ],
+     "subject_types_supported": [ "public" ],
+     "id_token_alg_values_supported": [ "RS256" ]
+    }
+
+This document is changed infrequently and may be cached by the client application.
+Standard HTTP cache headers are used when delivering the document and should be honored.
+
