@@ -1,5 +1,5 @@
 FORMAT: 1A
-HOST: https://accounts.pdk.io/oauth2
+HOST: https://accounts.pdk.io
 
 # PDK Auth API
 The PDK Auth API is a collection of centralized authentication and authorization endpoints for initiating and managing secure interaction with the suite of PDK APIs.
@@ -19,20 +19,18 @@ The specification describes a method for dynamically discoverying this informati
 
 `https://accounts.pdk.io/.well-known/openid-configuration`
 
-Here is an example of the discovery document formatted as defined in the [OpenID Connect Discovery 1.0](http://openid.net/specs/openid-connect-discovery-1_0.html#ProviderMetadata) standard.
+Below is an example of the discovery document formatted as defined in the [OpenID Connect Discovery 1.0](http://openid.net/specs/openid-connect-discovery-1_0.html#ProviderMetadata) standard.
 While this is a recent copy of the actual document, the values may change.
 
     {
      "issuer": "accounts.pdk.io",
      "authorization_endpoint": "https://accounts.pdk.io/oauth2/auth",
      "token_endpoint": "https://accounts.pdk.io/oauth2/token",
-     "userinfo_endpoint": "https://accounts.pdk.io/api/v1/users/me/openIdConnect",
+     "userinfo_endpoint": "https://accounts.pdk.io/api/users/me/openIdConnect",
      "revocation_endpoint": "https://accounts.pdk.io/oauth2/revoke",
      "jwks_uri": "https://accounts.pdk.io/oauth2/certs",
      "response_types_supported": [
-      "code", "token", "id_token",
-      "code token", "code id_token", "token id_token", "code token id_token",
-      "none"
+      "code"
      ],
      "subject_types_supported": [ "public" ],
      "id_token_alg_values_supported": [ "RS256" ]
@@ -40,4 +38,151 @@ While this is a recent copy of the actual document, the values may change.
 
 This document is changed infrequently and may be cached by the client application.
 Standard HTTP cache headers are used when delivering the document and should be honored.
+
+# Authentication Flows
+There are a number of supported authentication flows that are used with certain application types.
+
+## Installed Applications
+This flow is for an application that is installed on a user's desktop computer.
+The client application must have access to the system browser or a hosted web view in order to facilitate user authenticate with this flow.
+
+1. Direct the user to an authentication URL through a browser.
+2. The user authenticates via the interface presented by the PDK authentication system. An authorization code is returned to your application either through a local HTTP endpoint or via the browser's title.
+3. Your application, using Basic HTTP auth with the `client_id` and `client_secret`, makes an OOB request to the auth system to exchange that authorization code for an access token and a refresh token.
+4. The access token can now be used to make requests to PDK API endpoints, the refresh token should be durably stored for obtaining a new access token when the current one expires.
+
+![Auth flow](https://github.com/adam-p/markdown-here/raw/master/src/common/images/icon48.png)
+
+### 1. Authenticate User
+The URL to direct the user to can be found in the discovery document `authorization_endpoint` key.
+
+There are a number of querystring parameters that must be included in this URL to properly authenticate the user and generate an authorization code.
+
+|Parameter | Value | Description |
+|----------|-------|-------------|
+| response_type | code | This tells the authentication server that your application is expecting an authorization code |
+| client_id | The `client_id` assigned to your application | This identifies the application that is requesting access to the user's data |
+| redirect_uri | The value to tell the auth system how to return the code | This determines how the access code is communcated to the application. You may choose between `urn:ietf:wg:oauth:2.0:oob` or `http://localhost` with a port number. This is covered in more detail below. |
+| scope | openid | This is for future use and should only contain the value `openid` for now. |
+| state | Any value | This is not required, but is available to round-trip any state information that may be useful to your application. |
+| login_hint | email address or sub id | If your application knows what user is authenticating, this parameter will be used by the authentication system to pre-fill the login email. |
+
+#### Example URL
+
+    https://accounts.pdk.io/oauth2/auth?
+    response_type=code&
+    scope=openid&
+    redirect_uri=http://localhost:7446&
+    client_id=2a66a379df83b55716a3aee9294ef165
+
+### 2. Get Authorization Code
+Once the user successfully authenticates, the authorization code will be returned according to the value specified in the `redirect_uri` parameter.
+This can be one of two ways.
+
+#### Local HTTP Endpoint
+If your application can host an HTTP endpoint to recieve the code, this is the preferred method.
+Before redirecting the user to the authentication URL, your application should start listening on a random unused local port.
+The `redirect_uri` parameter should then specify this port number; for example, if your application is listening on port 4567 then the value should be `http://localhost:4567`.
+
+Once the user successfully authenticates, the browser will be redirected to your HTTP endpoint with the authorization code in the `code` querystring parameter.
+The URL will look similar to `http://localhost:4567?code=fc04ddce7bc3435f5e20b9f3f6f8bcce`.
+
+#### Browser Title Bar
+An alternate method for receiving the code is for the authentication flow to set the title of the browser once the user successfully authenticates.
+This method will be used when your application specifies `urn:ietf:wg:oauth:2.0:oob` for `redirect_uri`.
+Your application will need to watch the title of the web browser to change and contain the string "Success".
+
+Once the user successfully authenticates, the title of the browser will be changed and will contain the auhtorization code.
+The title value will look like `Success code=fc04ddce7bc3435f5e20b9f3f6f8bcce`
+
+### 3. Exchange Authorization Code
+The authorization code is a one-time-use code that your application uses to retrieve an access token which can then be used to make authenticated API requests.
+To exchange the authorization code for an access token your application needs to make an HTTP POST request to the token endpoint of the auth system.
+The token endpoint is located in the discovery document `token_endpoint` key.
+
+#### Request
+The request must contain a number of form-urlencoded parameters
+
+| Parameter | Description |
+|-----------|-------------|
+| code | The authorization code received in the previous step. |
+| client_id | The `client_id` assigned to your application. |
+| client_secret | The `client_secret` assigned to your application |
+| redirect_uri | The value provided in the previous step. This value is not used for returning the access token in the Installed Application flow but is still required. |
+| grant_type | This must contain the value `authorization_code` as specified by the OAuth 2 specification. |
+
+The raw HTTP request may look like this:
+
+```
+POST /oauth2/token HTTP/1.1
+Host: accounts.pdk.io
+Content-Type: application/x-www-form-urlencoded
+
+code=fc04ddce7bc3435f5e20b9f3f6f8bcce&
+client_id=2a66a379df83b55716a3aee9294ef165&
+client_secret=your_client_secret&
+redirect_uri=https://oauth2-login-demo.appspot.com/code&
+grant_type=authorization_code
+```
+
+#### Response
+
+The response to the POST request is JSON formatted data containing the access and refresh tokens.
+
+| Value | Description |
+|-------|-------------|
+| access_token | The access token that may now be used for making authenticated API requests. This is an encoded JWT that is described in more detail later. |
+| refresh_token | This token is used to get a fresh access token when the current one expires. The refresh token never expires and should be durably stored by your application. |
+| token_type | The type of access token returned, this is currently always `Bearer`.
+
+An example JSON encoded response may look like this:
+
+```
+{
+  "access_token":"eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiJ9...GmUdC2H13YMCwc30Z3l5RCrbwQ",
+  "token_type":"Bearer",
+  "refresh_token":"76c5cdeecfd1543cfd4c3e7c054780ac"
+}
+```
+
+### 4. Make API Requests
+Now that your application has a valid access token it can now use that token to make authenticated requests to PDI APIs.
+This is done by simply including the access token in the Bearer type Authorization header of your requests.
+
+The Authorization header should look similar to:
+
+    Authorization: Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiJ9...GmUdC2H13YMCwc30Z3l5RCrbwQ
+
+# Access Token
+The access token that is returned by the authentication flow is a JWT as specified in the [draft IETF standard](http://tools.ietf.org/html/draft-jones-json-web-token-10).
+This token contains claims for the authenticated user, an issuer, a target audience, and an expiration time.
+These claims include the user's roles, name, email, user id, and other attributes used to identify and authorize certain actions carried out on the user's behalf.
+
+Since this token is digitally signed by the authentication system, the validity of the data in the token can easily be asserted and trusted.
+The public keys for verifying the signature of the token are available at the `jwks_uri` key of the discovery document.
+
+For optimum security, these tokens expire frequently and will no longer work after the expiration time.
+The application will need to obtain a fresh token in order to continue making authenticated requests to API endpoints.
+
+The body of a JWT may look like:
+
+```
+{
+  "io.pdk.rls": [
+    "admin",
+    "user"
+  ],
+  "io.pdk.prts": [
+    "high school",
+    "jr high"
+  ],
+  "iat": 1402936513,
+  "exp": 1402940113,
+  "aud": "PDK10702MQ",
+  "iss": "io.pdk.accounts",
+  "sub": "io.pdk.accounts.12345567"
+}
+```
+
+# Refresh Tokens
 
