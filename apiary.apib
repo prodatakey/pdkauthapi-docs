@@ -46,12 +46,14 @@ There are a number of supported authentication flows that are used with certain 
 This flow is for an application that is installed on a user's desktop computer.
 The client application must have access to the system browser or a hosted web view in order to facilitate user authenticate with this flow.
 
+There are 4 steps to successfully implementing this flow in your application.
+
 1. Direct the user to an authentication URL through a browser.
 2. The user authenticates via the interface presented by the PDK authentication system. An authorization code is returned to your application either through a local HTTP endpoint or via the browser's title.
 3. Your application, using Basic HTTP auth with the `client_id` and `client_secret`, makes an OOB request to the auth system to exchange that authorization code for an access token and a refresh token.
 4. The access token can now be used to make requests to PDK API endpoints, the refresh token should be durably stored for obtaining a new access token when the current one expires.
 
-![Auth flow](https://github.com/adam-p/markdown-here/raw/master/src/common/images/icon48.png)
+![Auth flow](https://dl.dropbox.com/s/2kc4dvkhab16bfb/installed-app-flow.png)
 
 ### 1. Authenticate User
 The URL to direct the user to can be found in the discovery document `authorization_endpoint` key.
@@ -146,7 +148,7 @@ An example JSON encoded response may look like this:
 ```
 
 ### 4. Make API Requests
-Now that your application has a valid access token it can now use that token to make authenticated requests to PDI APIs.
+Now that your application has a valid access token it can now use that token to make authenticated requests to PDK APIs.
 This is done by simply including the access token in the Bearer type Authorization header of your requests.
 
 The Authorization header should look similar to:
@@ -185,4 +187,49 @@ The body of a JWT may look like:
 ```
 
 # Refresh Tokens
+When the access token expires your application will need a new one.
+If you used a flow that provided a refresh token then that can be used to request a new access token from the auth system.
+The refresh token should be saved in durable storage as it never expires and will be able to be used to retrieve fresh access tokens unless the user or PDK revokes access to the client application.
 
+#### Request
+Requesting a refresh token is very similar to exchanging an authorization code for an access token.
+Your application will need to make an HTTP POST request to the token endpoint which can be found in the discovery document `token_endpoint` key.
+The request must contain a number of form-urlencoded parameters
+
+| Parameter | Description |
+|-----------|-------------|
+| refresh_token | This is the persistent refresh token that your application should have received during the initial user authentication. |
+| client_id | The `client_id` assigned to your application. |
+| client_secret | The `client_secret` assigned to your application |
+| grant_type | This must contain the value `refresh_token` as specified by the OAuth 2 specification. |
+
+The raw HTTP request may look like this:
+
+```
+POST /oauth2/token HTTP/1.1
+Host: accounts.pdk.io
+Content-Type: application/x-www-form-urlencoded
+
+refresh_token=76c5cdeecfd1543cfd4c3e7c054780ac&
+client_id=2a66a379df83b55716a3aee9294ef165&
+client_secret=your_client_secret&
+grant_type=refresh_token
+```
+
+#### Response
+
+The response to the POST request is JSON formatted data containing the fresh access token.
+
+| Value | Description |
+|-------|-------------|
+| access_token | The access token that may now be used for making authenticated API requests. This is an encoded JWT that is described in more detail later. |
+| token_type | The type of access token returned, this is currently always `Bearer`.
+
+An example JSON encoded response may look like this:
+
+```
+{
+  "access_token":"eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiJ9...GmUdC2H13YMCwc30Z3l5RCrbwQ",
+  "token_type":"Bearer"
+}
+```
