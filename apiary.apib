@@ -23,17 +23,15 @@ Below is an example of the discovery document formatted as defined in the [OpenI
 While this is a recent copy of the actual document, the values may change.
 
     {
-     "issuer": "accounts.pdk.io",
-     "authorization_endpoint": "https://accounts.pdk.io/oauth2/auth",
-     "token_endpoint": "https://accounts.pdk.io/oauth2/token",
-     "userinfo_endpoint": "https://accounts.pdk.io/api/users/me/openIdConnect",
-     "revocation_endpoint": "https://accounts.pdk.io/oauth2/revoke",
-     "jwks_uri": "https://accounts.pdk.io/oauth2/certs",
-     "response_types_supported": [
-      "code"
-     ],
-     "subject_types_supported": [ "public" ],
-     "id_token_alg_values_supported": [ "RS256" ]
+        "issuer": "accounts.pdk.io",
+        "authorization_endpoint": "https://accounts.pdk.io/oauth2/auth",
+        "token_endpoint": "https://accounts.pdk.io/oauth2/token",
+        "userinfo_endpoint": "https://accounts.pdk.io/api/users/me/openIdConnect",
+        "revocation_endpoint": "https://accounts.pdk.io/oauth2/revoke",
+        "jwks_uri": "https://accounts.pdk.io/oauth2/certs",
+        "response_types_supported": [ "code" ],
+        "subject_types_supported": [ "public" ],
+        "id_token_alg_values_supported": [ "RS256" ]
     }
 
 This document is changed infrequently and may be cached by the client application.
@@ -233,3 +231,71 @@ An example JSON encoded response may look like this:
   "token_type":"Bearer"
 }
 ```
+
+# Account System API
+
+# Group Users
+The User entity represents a distinct security context identified by a username and a password.
+
+# Group Panels
+The Panel entity represents the CPE that is the host of the PDK Panel API.
+
+## Panel Collection [/panels]
+### List all Panels [GET]
++ Request
+    + Headers
+    
+            Authorization: Bearer {token}
+        
++ Response 200 (application/json)
+
+        {
+            count: 1,
+            data: [
+                {
+                    id: '10702MQ',
+                    apiEndpoint: 'http://10702MQ.pdk.io/api'
+                }
+            ]
+        }
+
+## Panel [/panel/{id}]
+A distinct Panel entity.
++ Parameters
+    + id (required, number, `10702MQ`) ... Numeric `id` of the Panel to perform the action on.
+    
+### Retrieve a Panel [GET]
++ Response 200 (application/json)
+
+### Update a Panel [PUT]
++ Response 204
+
+### Deregister a Panel [DELETE]
++ Response 204
+
+# Group Organizations
+The Organization entity is a heirarchical container of Users, Panels, and other Organizations.
+Each of these entities can only be a member of a single Organization.
+A User has access (according to their roles) to all of the Users, Panels, and Organizations at their level and deeper in the heirarchy.
+
+# Group Authentication Endpoints
+Any URLs used in this documentation are purely illustrative.
+The discovery document described earlier should be used to locate the appropriate URLs.
+
+## Authentication Endpoint [/oauth2/auth]
+
+## Token Endpoint [/oauth2/token]
+
+### Get an Access Token [POST]
++ Request (application/x-www-form-urlencoded)
+
+        code=fc04ddce7bc3435f5e20b9f3f6f8bcce&client_id=2a66a379df83b55716a3aee9294ef165&client_secret=your_client_secret&redirect_uri=https://oauth2-login-demo.appspot.com/code&grant_type=authorization_code
+        
++ Response 200 (application/json)
+
+        {
+            "access_token":"eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiJ9...GmUdC2H13YMCwc30Z3l5RCrbwQ",
+            "token_type":"Bearer",
+            "refresh_token":"76c5cdeecfd1543cfd4c3e7c054780ac"
+        }
+        
