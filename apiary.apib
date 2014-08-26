@@ -100,14 +100,14 @@ The authorization code is a one-time-use code that your application uses to retr
 To exchange the authorization code for an access token your application needs to make an HTTP POST request to the token endpoint of the auth system.
 The token endpoint is located in the discovery document `token_endpoint` key.
 
+To make this request, the application must use a standard HTTP basic authentication header with the `client_id` as the user name and `client_secret` as the password used to generate this header.
+
 #### Request
 The request must contain a number of form-urlencoded parameters
 
 | Parameter | Description |
 |-----------|-------------|
 | code | The authorization code received in the previous step. |
-| client_id | The `client_id` assigned to your application. |
-| client_secret | The `client_secret` assigned to your application |
 | redirect_uri | The value provided in the previous step. This value is not used for returning the access token in the Installed Application flow but is still required. |
 | grant_type | This must contain the value `authorization_code` as specified by the OAuth 2 specification. |
 
@@ -117,10 +117,9 @@ The raw HTTP request may look like this:
 POST /oauth2/token HTTP/1.1
 Host: accounts.pdk.io
 Content-Type: application/x-www-form-urlencoded
+Basic MmE2NmEzNzlkZjgzYjU1NzE2YTNhZWU5Mjk0ZWYxNjU6eW91cl9jbGllbnRfc2VjcmV0
 
 code=fc04ddce7bc3435f5e20b9f3f6f8bcce&
-client_id=2a66a379df83b55716a3aee9294ef165&
-client_secret=your_client_secret&
 redirect_uri=https://oauth2-login-demo.appspot.com/code&
 grant_type=authorization_code
 ```
@@ -192,13 +191,14 @@ The refresh token should be saved in durable storage as it never expires and wil
 #### Request
 Requesting a refresh token is very similar to exchanging an authorization code for an access token.
 Your application will need to make an HTTP POST request to the token endpoint which can be found in the discovery document `token_endpoint` key.
+
+To make this request, the application must use a standard HTTP basic authentication header with the `client_id` as the user name and `client_secret` as the password used to generate this header.
+
 The request must contain a number of form-urlencoded parameters
 
 | Parameter | Description |
 |-----------|-------------|
 | refresh_token | This is the persistent refresh token that your application should have received during the initial user authentication. |
-| client_id | The `client_id` assigned to your application. |
-| client_secret | The `client_secret` assigned to your application |
 | grant_type | This must contain the value `refresh_token` as specified by the OAuth 2 specification. |
 
 The raw HTTP request may look like this:
@@ -207,10 +207,10 @@ The raw HTTP request may look like this:
 POST /oauth2/token HTTP/1.1
 Host: accounts.pdk.io
 Content-Type: application/x-www-form-urlencoded
+Basic MmE2NmEzNzlkZjgzYjU1NzE2YTNhZWU5Mjk0ZWYxNjU6eW91cl9jbGllbnRfc2VjcmV0
+
 
 refresh_token=76c5cdeecfd1543cfd4c3e7c054780ac&
-client_id=2a66a379df83b55716a3aee9294ef165&
-client_secret=your_client_secret&
 grant_type=refresh_token
 ```
 
