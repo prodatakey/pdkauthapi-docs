@@ -63,7 +63,7 @@ There are a number of querystring parameters that must be included in this URL t
 | response_type | code | This tells the authentication server that your application is expecting an authorization code |
 | client_id | The `client_id` assigned to your application | This identifies the application that is requesting access to the user's data |
 | redirect_uri | The value to tell the auth system how to return the code | This determines how the access code is communcated to the application. You may choose between `urn:ietf:wg:oauth:2.0:oob` or `http://localhost` with a port number. This is covered in more detail below. |
-| scope | openid | This is for future use and should only contain the value `openid` for now. |
+| scope | openid | A space-separated list of access scopes needed by the application. This should contain the value `openid` to specify an OpenID profile. If the application needs a refresh token for access while the user may be away from their computer, add `offline_access` to the list. |
 | state | Any value | This is not required, but is available to round-trip any state information that may be useful to your application. |
 | login_hint | email address or sub id | If your application knows what user is authenticating, this parameter will be used by the authentication system to pre-fill the login email. |
 
@@ -132,16 +132,19 @@ The response to the POST request is JSON formatted data containing the access an
 |-------|-------------|
 | access_token | The access token that may now be used for making authenticated API requests. |
 | id_token |  This is an encoded JWT that contains information on the authenticated user. It is described in more detail later. |
-| refresh_token | This token is used to get a fresh access token when the current one expires. The refresh token never expires and should be durably and securely stored by your application. |
-| token_type | The type of access token returned, this is currently always `Bearer`.
+| refresh_token | This will be present if the `offline_access` scope was requested. This token is used to get a fresh access token when the current one expires. The refresh token never expires and should be durably and securely stored by your application. |
+| token_type | The type of access token returned, this is currently always `Bearer`. |
+| expires_in | Expiration time of the Access Token in seconds since the response was generated |
 
 An example JSON encoded response may look like this:
 
 ```
 {
-  "access_token":"eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiJ9...GmUdC2H13YMCwc30Z3l5RCrbwQ",
+  "access_token":"SlAV32hkKG"
+  "id_token":"eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiJ9...GmUdC2H13YMCwc30Z3l5RCrbwQ",
   "token_type":"Bearer",
-  "refresh_token":"76c5cdeecfd1543cfd4c3e7c054780ac"
+  "refresh_token":"76c5cdeecfd1543cfd4c3e7c054780ac",
+  "expires_in": 3600
 }
 ```
 
@@ -208,13 +211,16 @@ Once the user successfully authenticates, their user-agent will be redirected ba
 
 
 # Access Token
-This is an opaque value that is used by the application to make requests to the Auth API endpoint. It should be placed in the Authorization header of any requests as a Bearer value.
+This is an opaque authentication token that can be used to call the `user_info` endpoint found in the discovery document.
+It should be placed in the Authorization header a Bearer value.
 
 For optimum security, these tokens expire frequently and will no longer work after the expiration time.
 The application will need to obtain a fresh token in order to continue making authenticated requests to API endpoints.
 
 
 # ID Token
+This token is used for accessing the Accounts System APIs (Users, Panels, Org Units).
+
 The ID token that is returned by the authentication flow is a JWT as specified in the [draft IETF standard](http://tools.ietf.org/html/draft-jones-json-web-token-10).
 This token contains claims for the authenticated user, an issuer, a target audience, and an expiration time.
 These claims include the user's roles, name, email, user id, and other attributes used to identify and authorize certain actions carried out on the user's behalf.
@@ -275,14 +281,14 @@ The response to the POST request is JSON formatted data containing the fresh acc
 
 | Value | Description |
 |-------|-------------|
-| access_token | The access token that may now be used for making authenticated API requests. This is an encoded JWT that is described in more detail later. |
+| id_token | The access token that may now be used for making authenticated API requests. This is an encoded JWT that is described in more detail later. |
 | token_type | The type of access token returned, this is currently always `Bearer`.
 
 An example JSON encoded response may look like this:
 
 ```
 {
-  "access_token":"eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiJ9...GmUdC2H13YMCwc30Z3l5RCrbwQ",
+  "id_token":"eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiJ9...GmUdC2H13YMCwc30Z3l5RCrbwQ",
   "token_type":"Bearer"
 }
 ```
@@ -361,10 +367,10 @@ To access the panel's API endpoint your applicaiton needs to have a valid, unexp
     + id (required, number, `10702MQ`) ... Numeric `id` of the Panel to perform the action on.
 
 ### Generate an API Token [PUT]
-Generate a time-limited token for the current user's access to the panel's API.
+Generate a time-limited Bearer token for the current user's access to the panel's API.
 This token will only work for accessing the panel specified in the `id` parameter.
 If there was an unexpired token already generated for this user/panel, that token will be provided.
-+ Response 200 (applicaiton/json)
++ Response 200 (application/json)
 
         {
             "token": "eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiJ9...GmUdC2H13YMCwc30Z3l5RCrbwQ"
