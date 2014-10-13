@@ -130,8 +130,9 @@ The response to the POST request is JSON formatted data containing the access an
 
 | Value | Description |
 |-------|-------------|
-| access_token | The access token that may now be used for making authenticated API requests. This is an encoded JWT that is described in more detail later. |
-| refresh_token | This token is used to get a fresh access token when the current one expires. The refresh token never expires and should be durably stored by your application. |
+| access_token | The access token that may now be used for making authenticated API requests. |
+| id_token |  This is an encoded JWT that contains information on the authenticated user. It is described in more detail later. |
+| refresh_token | This token is used to get a fresh access token when the current one expires. The refresh token never expires and should be durably and securely stored by your application. |
 | token_type | The type of access token returned, this is currently always `Bearer`.
 
 An example JSON encoded response may look like this:
@@ -152,8 +153,63 @@ The Authorization header should look similar to:
 
     Authorization: Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiJ9...GmUdC2H13YMCwc30Z3l5RCrbwQ
 
-# Access Token
-The access token that is returned by the authentication flow is a JWT as specified in the [draft IETF standard](http://tools.ietf.org/html/draft-jones-json-web-token-10).
+
+
+
+
+## Implicit Client Flow
+
+The Implicit Flow is intended for Clients, such as client-side javascript applications, that cannot securely maintain a Client Secret between themselves and the Authorization Server.
+
+### 1. Authenticate User
+The URL to direct the user to can be found in the discovery document `authorization_endpoint` key.
+
+There are a number of querystring parameters that must be included in this URL to properly authenticate the user and generate the authorization tokens.
+
+|Parameter | Value | Description |
+|----------|-------|-------------|
+| response_type | id_token token | This requests that both an Access Token and an ID Token be returned from the Authorization Endpoint |
+| client_id | The `client_id` assigned to your application | This identifies the application that is requesting access to the user's data |
+| redirect_uri | The value to tell the auth system how to return the code | This determines how the access code is communcated to the application. You may choose between `urn:ietf:wg:oauth:2.0:oob` or `http://localhost` with a port number. This is covered in more detail below. |
+| scope | openid | This is for future use and should only contain the value `openid` for now. |
+| state | Any value | This is not required, but is available to round-trip any state information that may be useful to your application. This value should be secured against modification. |
+| login_hint | email address or sub id | If your application knows what user is authenticating, this parameter will be used by the authentication system to pre-fill the login email. |
+| nonce | A cryptographically unique one-time-use token | To mitigate replay attacks, this token must have sufficient entropy. The hash of a cryptographically random value stored in local storage should be sufficient. This is forwarded, unchanged inside the id token, back to the client and should be verified. |
+
+#### Example URL
+
+    https://accounts.pdk.io/oauth2/auth?
+        response_type=id_token%20token&
+        client_id=2a66a379df83b55716a3aee9294ef165&
+        redirect_uri=https://example.com/myapp&
+        scope=openid&
+        state=af0ifjsldkj
+        nonce=n-0S6_WzA2Mj
+
+### 2. Receive Token Response
+Once the user successfully authenticates, their user-agent will be redirected back to your client's `redirect_uri`. The tokens and other authentication information are included in the fragment portion of the URI, this is mainly so that those values are not captured in webserver logs.
+
+| Value | Description |
+|-------|-------------|
+| access_token | The access token that may now be used for making authenticated API requests. |
+| token_type | The type of access token returned, this is currently always `Bearer`. |
+| id_token |  This is an encoded JWT that contains information on the authenticated user. It is described in more detail later. |
+| expires_in | Expiration time of the Access Token in seconds since the response was generated. |
+| state | Client value included in the `state` parameter of the authentication request. |
+
+    https://client.example.org/cb#
+        access_token=SlAV32hkKG&
+        token_type=bearer&
+        id_token=eyJ0 ... NiJ9.eyJ1c ... I6IjIifX0.DeWt4Qu ... ZXso&
+        expires_in=3600&
+        state=af0ifjsldkj
+
+
+
+
+
+# ID Token
+The ID token that is returned by the authentication flow is a JWT as specified in the [draft IETF standard](http://tools.ietf.org/html/draft-jones-json-web-token-10).
 This token contains claims for the authenticated user, an issuer, a target audience, and an expiration time.
 These claims include the user's roles, name, email, user id, and other attributes used to identify and authorize certain actions carried out on the user's behalf.
 
