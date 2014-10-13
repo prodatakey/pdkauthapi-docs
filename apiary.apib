@@ -120,7 +120,7 @@ Content-Type: application/x-www-form-urlencoded
 Basic MmE2NmEzNzlkZjgzYjU1NzE2YTNhZWU5Mjk0ZWYxNjU6eW91cl9jbGllbnRfc2VjcmV0
 
 code=fc04ddce7bc3435f5e20b9f3f6f8bcce&
-redirect_uri=https://oauth2-login-demo.appspot.com/code&
+redirect_uri=https://myapp.example.com/code&
 grant_type=authorization_code
 ```
 
@@ -159,7 +159,7 @@ The Authorization header should look similar to:
 
 ## Implicit Client Flow
 
-The Implicit Flow is intended for Clients, such as client-side javascript applications, that cannot securely maintain a Client Secret between themselves and the Authorization Server.
+The [Implicit Flow](http://openid.net/specs/openid-connect-implicit-1_0.html) is intended for Clients, such as client-side javascript applications, that cannot securely maintain a Client Secret between themselves and the Authorization Server.
 
 ### 1. Authenticate User
 The URL to direct the user to can be found in the discovery document `authorization_endpoint` key.
@@ -181,7 +181,7 @@ There are a number of querystring parameters that must be included in this URL t
     https://accounts.pdk.io/oauth2/auth?
         response_type=id_token%20token&
         client_id=2a66a379df83b55716a3aee9294ef165&
-        redirect_uri=https://example.com/myapp&
+        redirect_uri=https://myapp.example.com/cb&
         scope=openid&
         state=af0ifjsldkj
         nonce=n-0S6_WzA2Mj
@@ -197,7 +197,7 @@ Once the user successfully authenticates, their user-agent will be redirected ba
 | expires_in | Expiration time of the Access Token in seconds since the response was generated. |
 | state | Client value included in the `state` parameter of the authentication request. |
 
-    https://client.example.org/cb#
+    https://myapp.example.com/cb#
         access_token=SlAV32hkKG&
         token_type=bearer&
         id_token=eyJ0 ... NiJ9.eyJ1c ... I6IjIifX0.DeWt4Qu ... ZXso&
@@ -206,6 +206,12 @@ Once the user successfully authenticates, their user-agent will be redirected ba
 
 
 
+
+# Access Token
+This is an opaque value that is used by the application to make requests to the Auth API endpoint. It should be placed in the Authorization header of any requests as a Bearer value.
+
+For optimum security, these tokens expire frequently and will no longer work after the expiration time.
+The application will need to obtain a fresh token in order to continue making authenticated requests to API endpoints.
 
 
 # ID Token
@@ -216,26 +222,20 @@ These claims include the user's roles, name, email, user id, and other attribute
 Since this token is digitally signed by the authentication system, the validity of the data in the token can easily be asserted and trusted.
 The public keys for verifying the signature of the token are available at the `jwks_uri` key of the discovery document.
 
-For optimum security, these tokens expire frequently and will no longer work after the expiration time.
-The application will need to obtain a fresh token in order to continue making authenticated requests to API endpoints.
-
 The body of a JWT may look like:
 
 ```
 {
-  "io.pdk.rls": [
+  "io.pdk.roles": [
     "admin",
     "user"
   ],
-  "io.pdk.prts": [
-    "high school",
-    "jr high"
-  ],
   "iat": 1402936513,
   "exp": 1402940113,
-  "aud": "PDK10702MQ",
+  "aud": "2a66a379df83b55716a3aee9294ef165",
   "iss": "io.pdk.accounts",
-  "sub": "io.pdk.accounts.12345567"
+  "sub": "12345567",
+  "at_hash": "MTIzNDU2Nzg5MDEyMzQ1Ng"
 }
 ```
 
@@ -293,7 +293,7 @@ An example JSON encoded response may look like this:
 The User entity represents a distinct security context identified by a username and a password.
 
 # Group Panels
-The Panel entity represents the CPE that is the host of the PDK Panel API.
+The Panel entity represents the CPE that hosts of the PDK Panel API.
 
 ## Panel Collection [/panels]
 ### List all Panels [GET]
@@ -303,18 +303,45 @@ The Panel entity represents the CPE that is the host of the PDK Panel API.
             Authorization: Bearer {token}
         
 + Response 200 (application/json)
+    + Headers
 
-        {
-            count: 1,
-            data: [
+            Link: <https://accounts.pdk.io/panels?page=2&per_page=10>; rel="next", <https://accounts.pdk.io/panels?page=3&per_page=10>; rel="last"
+            X-Total-Count: 25
+
+    + Body
+    
+            [
                 {
                     id: '10702MQ',
-                    apiEndpoint: 'http://10702MQ.pdk.io/api'
+                    apiEndpoint: 'https://10702MQ.pdk.io/api'
+                },
+                {
+                    id: '10702ZB',
+                    apiEndpoint: 'https://10702ZB.pdk.io/api'
                 }
             ]
-        }
+            
+### Register a Panel [POST]
++ Request (application/json)
+    + Headers
+    
+            Authorization: Bearer {token}
+        
+    + Body
+        
+            {
+                "serial": "10702MQ",
+                "ou": "5400fdacf5409b745231ce34"
+            }
 
-## Panel [/panel/{id}]
+
++ Response 201
+    + Headers
+    
+            Location: https://accounts.pdk.io/panels/10702MQ
+
+
+## Panel [/panels/{id}]
 A distinct Panel entity.
 + Parameters
     + id (required, number, `10702MQ`) ... Numeric `id` of the Panel to perform the action on.
@@ -328,29 +355,23 @@ A distinct Panel entity.
 ### Deregister a Panel [DELETE]
 + Response 204
 
-# Group Organizations
-The Organization entity is a heirarchical container of Users, Panels, and other Organizations.
-Each of these entities can only be a member of a single Organization.
-A User has access (according to their roles) to all of the Users, Panels, and Organizations at their level and deeper in the heirarchy.
+## Panel API Token [/panels/{id}/token]
+To access the panel's API endpoint your applicaiton needs to have a valid, unexpired, and discrete auth token.
++ Parameters
+    + id (required, number, `10702MQ`) ... Numeric `id` of the Panel to perform the action on.
 
-# Group Authentication Endpoints
-Any URLs used in this documentation are purely illustrative.
-The discovery document described earlier should be used to locate the appropriate URLs.
-
-## Authentication Endpoint [/oauth2/auth]
-
-## Token Endpoint [/oauth2/token]
-
-### Get an Access Token [POST]
-+ Request (application/x-www-form-urlencoded)
-
-        code=fc04ddce7bc3435f5e20b9f3f6f8bcce&client_id=2a66a379df83b55716a3aee9294ef165&client_secret=your_client_secret&redirect_uri=https://oauth2-login-demo.appspot.com/code&grant_type=authorization_code
-        
-+ Response 200 (application/json)
+### Generate an API Token [PUT]
+Generate a time-limited token for the current user's access to the panel's API.
+This token will only work for accessing the panel specified in the `id` parameter.
+If there was an unexpired token already generated for this user/panel, that token will be provided.
++ Response 200 (applicaiton/json)
 
         {
-            "access_token":"eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiJ9...GmUdC2H13YMCwc30Z3l5RCrbwQ",
-            "token_type":"Bearer",
-            "refresh_token":"76c5cdeecfd1543cfd4c3e7c054780ac"
+            "token": "eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiJ9...GmUdC2H13YMCwc30Z3l5RCrbwQ"
         }
-        
+
+
+# Group Organizational Units
+The Organizational Unit entity is a heirarchical container of Users, Panels, and other Organizational Units.
+Each of these entities can only be a member of a single Organization.
+A User has access (according to their roles) to all of the Users, Panels, and Organizations at their level and deeper in the heirarchy.
