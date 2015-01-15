@@ -350,7 +350,7 @@ The Panel entity represents the CPE that hosts of the PDK Panel API.
 ## Panel [/panels/{id}]
 A distinct Panel entity.
 + Parameters
-    + id (required, number, `10702MQ`) ... Numeric `id` of the Panel to perform the action on.
+    + id (required, string, `10702MQ`) ... Alphanumeric `id` of the Panel to perform the action on.
     
 ### Retrieve a Panel [GET]
 + Response 200 (application/json)
@@ -364,7 +364,7 @@ A distinct Panel entity.
 ## Panel API Token [/panels/{id}/token]
 To access the panel's API endpoint your applicaiton needs to have a valid, unexpired, and discrete auth token.
 + Parameters
-    + id (required, number, `10702MQ`) ... Numeric `id` of the Panel to perform the action on.
+    + id (required, string, `10702MQ`) ... Alphanumeric `id` of the Panel to perform the action on.
 
 ### Generate an API Token [PUT]
 Generate a time-limited Bearer token for the current user's access to the panel's API.
