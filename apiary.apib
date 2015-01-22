@@ -209,8 +209,8 @@ Once the user successfully authenticates, their user-agent will be redirected ba
 
 
 
-
-# Access Token
+# Tokens
+## Access Token
 This is an opaque authentication token that can be used to call the `user_info` endpoint found in the discovery document.
 It should be placed in the Authorization header a Bearer value.
 
@@ -218,7 +218,7 @@ For optimum security, these tokens expire frequently and will no longer work aft
 The application will need to obtain a fresh token in order to continue making authenticated requests to API endpoints.
 
 
-# ID Token
+## ID Token
 This token is used for accessing the Accounts System APIs (Users, Panels, Org Units).
 
 The ID token that is returned by the authentication flow is a JWT as specified in the [draft IETF standard](http://tools.ietf.org/html/draft-jones-json-web-token-10).
@@ -245,7 +245,7 @@ The body of a JWT may look like:
 }
 ```
 
-# Refresh Tokens
+## Refresh Tokens
 When the access token expires your application will need a new one.
 If you used a flow that provided a refresh token then that can be used to request a new access token from the auth system.
 The refresh token should be saved in durable storage as it never expires and will be able to be used to retrieve fresh access tokens unless the user or PDK revokes access to the client application.
