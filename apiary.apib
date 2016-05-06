@@ -1,5 +1,5 @@
 FORMAT: 1A
-HOST: https://accounts.pdk.io
+HOST: https://accounts.pdk.io/api
 
 # PDK Auth API
 The PDK Auth API is a collection of centralized authentication and authorization endpoints for initiating and managing secure interaction with the suite of PDK APIs.
@@ -314,7 +314,7 @@ The Panel entity represents the CPE that hosts of the PDK Panel API.
 + Response 200 (application/json)
     + Headers
 
-            Link: <https://accounts.pdk.io/panels?page=2&per_page=10>; rel="next", <https://accounts.pdk.io/panels?page=3&per_page=10>; rel="last"
+            Link: <https://accounts.pdk.io/api/panels?page=2&per_page=10>; rel="next", <https://accounts.pdk.io/panels?page=3&per_page=10>; rel="last"
             X-Total-Count: 25
 
     + Body
@@ -347,7 +347,7 @@ The Panel entity represents the CPE that hosts of the PDK Panel API.
 + Response 201
     + Headers
     
-            Location: https://accounts.pdk.io/panels/10702MQ
+            Location: https://accounts.pdk.io/api/panels/10702MQ
 
 
 ## Panel [/panels/{id}]
@@ -369,7 +369,7 @@ To access the panel's API endpoint your applicaiton needs to have a valid, unexp
 + Parameters
     + id (required, string, `10702MQ`) ... Alphanumeric `id` of the Panel to perform the action on.
 
-### Generate an API Token [PUT]
+### Generate an API Token [POST]
 Generate a time-limited Bearer token for the current user's access to the panel's API.
 This token will only work for accessing the panel specified in the `id` parameter.
 If there was an unexpired token already generated for this user/panel, that token will be provided.
