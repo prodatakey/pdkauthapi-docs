@@ -172,7 +172,7 @@ When used in an application where these client credentials can be kept secure, t
 
 This authentication flow mimics the concept of a service account. When enabling this flow, the client will also be assigned an identity and a role-based permission in a specific container, similar to a user.
 
-Auth API requests made with a token retrieved using this flow are authorized using this client identity and are constrained by the applied role and assigned container.
+Auth API requests made with a token retrieved using this flow are authorized and audit logged using this client identity and are constrained by the applied role and assigned container.
 
 ### Setup
 
