@@ -164,9 +164,7 @@ The Authorization header should look similar to:
 
 > **WARNING**: This flow should only be used for Clients that can keep their credentials private and that authorize any requests that make use of the token (e.g. a server-side web application or API protected by OAuth2).
 
-The Client Credentials flow is only a single step, this step is somewhat similar to the final step in the Installed Applications flow.
-
-When used in an application where these client credentials can be kept secure, they can be used to directly retrieve an access token from the token endpoint.
+When used in an application where the client credentials can be kept secure, they can be used to directly retrieve an access token, bearing the Client's identity, from the token endpoint.
 
 ### Service Account Analog
 
@@ -176,7 +174,7 @@ Auth API requests made with a token retrieved using this flow are authorized and
 
 ### Setup
 
-The Client must be explicitly enabled to use this flow; this ability is granted on a case-by-case basis.
+The Client must be explicitly enabled to use this flow and is granted on a case-by-case basis.
 
 To create an integration that does not meet the use-cases of the other flows, please reach out to support with information on the application.
 The goal of this process is to ensure proper use-case match and to audit that the Client security model meets the needs of the customer.
@@ -184,7 +182,7 @@ The goal of this process is to ensure proper use-case match and to audit that th
 In your initial contact, please provide as much information as possible on the application use-case requiring this flow and on the authentication and authorization system that the client will be used behind.
 Also include the role and container ID where the client's permission should be granted.
 
-A member of the developer relations team will follow up with any additional questions or concerns and enable the flow when it is deemed that the solution meets the use-case and security requirements.
+A member of our developer relations team will follow up with any additional questions or concerns and enable the flow when it is deemed that the solution meets the use-case and security requirements.
 
 ### 1. Retrieve Access Token
 An access token can be used to make authenticated API requests. To retrieve an access token your application needs to make an HTTP POST request to the token endpoint of the auth system.
