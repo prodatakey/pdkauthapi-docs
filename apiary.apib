@@ -40,16 +40,16 @@ Standard HTTP cache headers are used when delivering the document and should be 
 # Authentication Flows
 There are a number of supported authentication flows that are used with certain application types.
 
-## Installed Applications
-This flow is for an application that is installed on a user's desktop computer.
-The client application must have access to the system browser or a hosted web view in order to facilitate user authenticate with this flow.
+## Installed Applications Flow
+This flow is for an application that is installed on a user's desktop computer or mobile device.
+The client application must have access to the system browser or a hosted web view in order to facilitate user authentication with this flow.
 
 There are 4 steps to successfully implementing this flow in your application.
 
-1. Direct the user to an authentication URL through a browser.
+1. Direct the user to an authentication URL through a browser that securely stores user cookies.
 2. The user authenticates via the interface presented by the PDK authentication system. An authorization code is returned to your application either through a local HTTP endpoint or via the browser's title.
-3. Your application, using Basic HTTP auth with the `client_id` and `client_secret`, makes an OOB request to the auth system to exchange that authorization code for an access token and a refresh token.
-4. The access token can now be used to make requests to PDK API endpoints, the refresh token should be durably stored for obtaining a new access token when the current one expires.
+3. Your application, using Basic HTTP auth with the `client_id` and `client_secret`, makes an OOB request to the auth system to exchange that authorization code for an access token and ocassionally a refresh token.
+4. The access token can now be used to make requests to PDK API endpoints.
 
 ![Auth flow](https://dl.dropbox.com/s/2kc4dvkhab16bfb/installed-app-flow.png)
 
@@ -77,7 +77,7 @@ There are a number of querystring parameters that must be included in this URL t
 
 ### 2. Get Authorization Code
 Once the user successfully authenticates, the authorization code will be returned according to the value specified in the `redirect_uri` parameter.
-This can be one of two ways.
+This can be one of a few ways.
 
 #### Local HTTP Endpoint
 If your application can host an HTTP endpoint to recieve the code, this is the preferred method.
@@ -90,17 +90,19 @@ The URL will look similar to `http://localhost:4567?code=fc04ddce7bc3435f5e20b9f
 #### Browser Title Bar
 An alternate method for receiving the code is for the authentication flow to set the title of the browser once the user successfully authenticates.
 This method will be used when your application specifies `urn:ietf:wg:oauth:2.0:oob` for `redirect_uri`.
-Your application will need to watch the title of the web browser to change and contain the string "Success".
 
 Once the user successfully authenticates, the title of the browser will be changed and will contain the auhtorization code.
 The title value will look like `Success code=fc04ddce7bc3435f5e20b9f3f6f8bcce`
+
+#### Remote HTTP Endpoint
+For server side web applications that are able to securely store the `client_id` and `client_secret` behind authenticated endpoints, we can also redirect authentication responses to an https endpoint of the application.
 
 ### 3. Exchange Authorization Code
 The authorization code is a one-time-use code that your application uses to retrieve an access token which can then be used to make authenticated API requests.
 To exchange the authorization code for an access token your application needs to make an HTTP POST request to the token endpoint of the auth system.
 The token endpoint is located in the discovery document `token_endpoint` key.
 
-To make this request, the application must use a standard HTTP basic authentication header with the `client_id` as the user name and `client_secret` as the password used to generate this header.
+To make this request, the application must create a standard HTTP basic authentication header with the `client_id` as the user name and `client_secret` as the password.
 
 #### Request
 The request must contain a number of form-urlencoded parameters
@@ -157,6 +159,88 @@ The Authorization header should look similar to:
     Authorization: Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiJ9...GmUdC2H13YMCwc30Z3l5RCrbwQ
 
 
+
+## Client Credentials Flow
+
+> **WARNING**: This flow should only be used for Clients that can keep their credentials private and that authorize any requests that make use of the token (e.g. a server-side web application or API protected by OAuth2).
+
+The Client Credentials flow is only a single step, this step is somewhat similar to the final step in the Installed Applications flow.
+
+When used in an application where these client credentials can be kept secure, they can be used to directly retrieve an access token from the token endpoint.
+
+### Service Account Analog
+
+This authentication flow mimics the concept of a service account. When enabling this flow, the client will also be assigned an identity and a role-based permission in a specific container, similar to a user.
+
+Auth API requests made with a token retrieved using this flow are authorized using this client identity and are constrained by the applied role and assigned container.
+
+### Setup
+
+The Client must be explicitly enabled to use this flow; this ability is granted on a case-by-case basis.
+
+To create an integration that does not meet the use-cases of the other flows, please reach out to support with information on the application.
+The goal of this process is to ensure proper use-case match and to audit that the Client security model meets the needs of the customer.
+
+In your initial contact, please provide as much information as possible on the application use-case requiring this flow and on the authentication and authorization system that the client will be used behind.
+Also include the role and container ID where the client's permission should be granted.
+
+A member of the developer relations team will follow up with any additional questions or concerns and enable the flow when it is deemed that the solution meets the use-case and security requirements.
+
+### 1. Retrieve Access Token
+An access token can be used to make authenticated API requests. To retrieve an access token your application needs to make an HTTP POST request to the token endpoint of the auth system.
+The token endpoint is located in the discovery document `token_endpoint` key.
+
+To make this request, the application must create a standard HTTP basic authentication header with the `client_id` as the user name and `client_secret` as the password.
+
+#### Request
+The request must contain the following form-urlencoded parameter:
+
+| Parameter | Description |
+|-----------|-------------|
+| grant_type | This must contain the value `client_credentials` as specified by the OAuth 2 specification. |
+
+The raw HTTP request may look like this:
+
+```
+POST /oauth2/token HTTP/1.1
+Host: accounts.pdk.io
+Content-Type: application/x-www-form-urlencoded
+Basic MmE2NmEzNzlkZjgzYjU1NzE2YTNhZWU5Mjk0ZWYxNjU6eW91cl9jbGllbnRfc2VjcmV0
+
+grant_type=client_credentials
+```
+
+#### Response
+
+The response to the POST request is JSON formatted data containing the access and refresh tokens.
+
+| Value | Description |
+|-------|-------------|
+| access_token | The access token that may now be used for making authenticated API requests. |
+| id_token |  This is an encoded JWT that contains information on the authenticated user. It is described in more detail later. |
+| token_type | The type of access token returned, this is currently always `Bearer`. |
+| expires_in | Expiration time of the Access Token in seconds since the response was generated |
+
+An example JSON encoded response may look like this:
+
+```
+{
+  "access_token":"SlAV32hkKG"
+  "id_token":"eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiJ9...GmUdC2H13YMCwc30Z3l5RCrbwQ",
+  "token_type":"Bearer",
+  "expires_in": 3600
+}
+```
+
+> *NOTE*: This authentication flow does not require the use of refresh tokens as the client can retrieve a fresh token from the token endpoint, without user-interaction, at any time.
+
+### 2. Make API Requests
+Now that your application has a valid access token it cannt  be used to make authenticated requests to PDK APIs.
+This is done by simply including the access token in the Bearer type Authorization header of your requests.
+
+The Authorization header should look similar to:
+
+    Authorization: Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiJ9...GmUdC2H13YMCwc30Z3l5RCrbwQ
 
 
 
@@ -241,10 +325,17 @@ The body of a JWT may look like:
 }
 ```
 
+**! SECURITY CRITICAL:**
+If you rely on data in this token for _any_ reason, be sure to get the certs and verify the signature properly.
+
+If you are only using the token as an opaque Bearer for accessing PDK APIs, there is no need to verify the token in your application.
+
 ## Refresh Tokens
-When the access token expires your application will need a new one.
-If the application requested `offline_access` through an auth flow that supports a refresh token, then that refresh token can be used to request a new access token from the auth system.
-The refresh token should be saved in durable storage as it never expires and will be able to be used to retrieve fresh access tokens unless the user or PDK revokes access to the client application.
+When an access token expires the application will need a new one.
+
+If the application requests the scope `offline_access` through any auth flow that supports a refresh token, then a refresh token is provided in the auth flow response. This refresh token is used to request fresh access tokens from the auth system while the user is not actively using the system.
+
+The refresh token should be saved in **secure** durable storage, as it expires only if the user or PDK revokes access to the application.
 
 Applications that require `offline_access` should be quite rare as this is only needed for accessing the user's system while they are not actively using the requesting application.
 
