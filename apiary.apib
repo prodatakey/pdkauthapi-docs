@@ -22,17 +22,19 @@ The specification describes a method for dynamically discoverying this informati
 Below is an example of the discovery document formatted as defined in the [OpenID Connect Discovery 1.0](http://openid.net/specs/openid-connect-discovery-1_0.html#ProviderMetadata) standard.
 While this is a recent copy of the actual document, the values may change.
 
-    {
-        "issuer": "accounts.pdk.io",
-        "authorization_endpoint": "https://accounts.pdk.io/oauth2/auth",
-        "token_endpoint": "https://accounts.pdk.io/oauth2/token",
-        "userinfo_endpoint": "https://accounts.pdk.io/api/users/me/openIdConnect",
-        "revocation_endpoint": "https://accounts.pdk.io/oauth2/revoke",
-        "jwks_uri": "https://accounts.pdk.io/oauth2/certs",
-        "response_types_supported": [ "code" ],
-        "subject_types_supported": [ "public" ],
-        "id_token_alg_values_supported": [ "RS256" ]
-    }
+```
+{
+    "issuer": "accounts.pdk.io",
+    "authorization_endpoint": "https://accounts.pdk.io/oauth2/auth",
+    "token_endpoint": "https://accounts.pdk.io/oauth2/token",
+    "userinfo_endpoint": "https://accounts.pdk.io/api/users/me/openIdConnect",
+    "revocation_endpoint": "https://accounts.pdk.io/oauth2/revoke",
+    "jwks_uri": "https://accounts.pdk.io/oauth2/certs",
+    "response_types_supported": [ "code" ],
+    "subject_types_supported": [ "public" ],
+    "id_token_alg_values_supported": [ "RS256" ]
+}
+```
 
 This document is changed infrequently and may be cached by the client application.
 Standard HTTP cache headers are used when delivering the document and should be honored.
@@ -63,7 +65,7 @@ There are a number of querystring parameters that must be included in this URL t
 | response_type | code | This tells the authentication server that your application is expecting an authorization code |
 | client_id | The `client_id` assigned to your application | This identifies the application that is requesting access to the user's data |
 | redirect_uri | The value to tell the auth system how to return the code | This determines how the access code is communcated to the application. You may choose between `urn:ietf:wg:oauth:2.0:oob` or `http://localhost` with a port number. This is covered in more detail below. |
-| scope | openid | A space-separated list of access scopes needed by the application. This should contain the value `openid` to specify an OpenID profile. If the application needs a refresh token for access while the user may be away from their computer, add `offline_access` to the list. |
+| scope | openid | A space-separated list of access scopes needed by the application. This should contain the value `openid` to specify an OpenID profile. If the application needs a refresh token for access while the user may be away from their computer, add `offline_access` to the scope list and `prompt=consent` to the URL. |
 | state | Any value | This is not required, but is available to round-trip any state information that may be useful to your application. |
 | login_hint | email address or sub id | If your application knows what user is authenticating, this parameter will be used by the authentication system to pre-fill the login email. |
 
@@ -210,7 +212,7 @@ grant_type=client_credentials
 
 #### Response
 
-The response to the POST request is JSON formatted data containing the access and refresh tokens.
+The response to the POST request is JSON formatted data containing the access, and id tokens.
 
 | Value | Description |
 |-------|-------------|
