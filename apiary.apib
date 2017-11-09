@@ -388,64 +388,51 @@ An example JSON encoded response may look like this:
 # Account System API
 
 # Group Users
-The User entity represents a distinct security context identified by a username and a password.
+The User entity represents a user login identity used for authentication and authorization against the system.
 
 # Group Panels
-The Panel entity represents the CPE that hosts of the PDK Panel API.
+The Panel entity represents the configuration of the cloud node customer premise equipment.
+This hardware hosts the PDK Panel API, and executes operations of the system at a site.
 
-## Panel Collection [/panels]
-### List all Panels [GET]
-+ Request
-    + Headers
-    
-            Authorization: Bearer {token}
-        
-+ Response 200 (application/json)
-    + Headers
+Registration and enumeration of panels is handled by operations on the OU entities since a panel can only exist as part of an OU.
 
-            Link: <https://accounts.pdk.io/api/panels?page=2&per_page=10>; rel="next", <https://accounts.pdk.io/panels?page=3&per_page=10>; rel="last"
-            X-Total-Count: 25
+The panel API endpoint can be resolved by getting the `uri` property of the panel document and appending the path `/api`.
+This URI should look similar to `https://panel-1070bbb.pdk.io/api`.
 
-    + Body
-    
-            [
-                {
-                    "id": "10702MQ",
-                    "apiEndpoint": "https://panel-10702MQ.pdk.io/api"
-                },
-                {
-                    "id": "10702ZB",
-                    "apiEndpoint": "https://panel-10702ZB.pdk.io/api"
-                }
-            ]
-            
-### Register a Panel [POST]
-+ Request (application/json)
-    + Headers
-    
-            Authorization: Bearer {token}
-        
-    + Body
-        
-            {
-                "serial": "10702MQ",
-                "ou": "5400fdacf5409b745231ce34"
-            }
-
-
-+ Response 201
-    + Headers
-    
-            Location: https://accounts.pdk.io/api/panels/10702MQ
-
+For information on interacting with this API, see the [PDK Panel API documentation](https://pdkapi.docs.apiary.io/).
 
 ## Panel [/panels/{id}]
 A distinct Panel entity.
+
 + Parameters
+
     + id (required, string, `10702MQ`) ... Alphanumeric `id` of the Panel to perform the action on.
+
++ Model (application/json)
+
+    + `id` (required, string) ... The hardware serial number.
+    + `name` (required, string) ... The user-readable name of the panel.
+    + `uri` (required, string) ... The URI where the panel can be communicated with.
+    + `notes` (required, string) ... User-defined notes.
+    + `online` (required, boolean) ... The panel's online state.
+    + `registeredDate` (required, string) ... Date and time that the panel was registered.
+
+    + Body
+    
+              {
+                 "id" : "10702GA",
+                 "name" : "🏢 Main Office",
+                 "uri" : "https://panel-10702GA.pdk.io/",
+                 "notes" : "",
+                 "online" : true,
+                 "registeredDate" : "2016-04-20T17:29:03.510Z"
+              }
     
 ### Retrieve a Panel [GET]
-+ Response 200 (application/json)
+
++ Response 200
+
+    [Panel][]
 
 ### Update a Panel [PUT]
 + Response 204
@@ -454,14 +441,22 @@ A distinct Panel entity.
 + Response 204
 
 ## Panel API Token [/panels/{id}/token]
+
 To access the panel's API endpoint your applicaiton needs to have a valid, unexpired, and discrete auth token.
+
+This token has a lifetime of 5 minutes, a fresh token must be retrieved in order to continue making requests to the panel API.
+The limited lifetime works to limit the impact of an exposed token and allows timely revocation of access in a distributed authentication system.
+
 + Parameters
     + id (required, string, `10702MQ`) ... Alphanumeric `id` of the Panel to perform the action on.
 
 ### Generate an API Token [POST]
+
 Generate a time-limited Bearer token for the current user's access to the panel's API.
 This token will only work for accessing the panel specified in the `id` parameter.
+
 If there was an unexpired token already generated for this user/panel, that token will be provided.
+
 + Response 200 (application/json)
 
         {
@@ -470,6 +465,130 @@ If there was an unexpired token already generated for this user/panel, that toke
 
 
 # Group Organizational Units
-The Organizational Unit entity is a heirarchical container of Users, Panels, and other Organizational Units.
-Each of these entities can only be a member of a single Organization.
-A User has access (according to their roles) to all of the Users, Panels, and Organizations at their level and deeper in the heirarchy.
+The Organizational Unit entity is a heirarchical container of user Permissions, Panels, and child Organizational Units.
+Each of these entities can only be a member of a single parent OU.
+
+A User is assigned a Permission in an OU to access (according to their roles) all of the Permissions, Panels, and Organizations at their level and deeper in the heirarchy.
+
+In the pdk.io web interface this entity is represented in the UI at `https://pdk.io/systems/{ou_id}`.
+The **Customers** collection represents the children of the current OU.
+
+## Organizational Unit [/ous/{ou_id}]
+
++ Parameters
+
+    + ou_id (required, number) ... Numeric `id` of the OU to perform the action on.
+
++ Model (application/json)
+
+    + Headers
+    
+                    
+    + Body
+    
+            {
+               "name" : "Integreat Inc.",
+               "id" : "55ca2050bbed06f4348b26e8",
+               "ancestors" : [
+                  "544557759a01deb9874c02ef"
+               ],
+               "parent" : "544557759a01deb9874c02ef",
+               "children" : [
+                  {
+                     "name" : "Production",
+                     "permissions" : [
+                        {
+                           "role" : "integrator",
+                           "userId" : "592457e5cb5f6f00011cc8ee",
+                           "email" : "support@prodatakey.com",
+                           "name" : "PDK Production",
+                           "_id" : "592458c6f570e60001fcefe1"
+                        }
+                     ],
+                     "id" : "592458bacb5f6f00011cc8f8",
+                     "panels" : [
+                        {
+                           "name" : "Rack Mount",
+                           "uri" : "https://panel-1070CIX.pdk.io/",
+                           "registeredDate" : "2017-06-13T01:01:37.553Z",
+                           "id" : "1070CIX"
+                        }
+                     ]
+                  },
+                  {
+                     "name" : "R&R BBQ 🍖",
+                     "id" : "581bac5b530b260001791b6b",
+                     "panels" : [],
+                     "permissions" : [
+                        {
+                           "email" : "josh+rr@pdk.io",
+                           "userId" : "5821f293530b260001791d15",
+                           "name" : "josh perry",
+                           "_id" : "5821f277530b260001791d14",
+                           "role" : "admin"
+                        },
+                        {
+                           "role" : "manager",
+                           "_id" : "5821f2c4530b260001791d17",
+                           "name" : "josh perry",
+                           "userId" : "5821f2e4530b260001791d18",
+                           "email" : "josh+rrman@pdk.io"
+                        },
+                        {
+                           "email" : "josh+rrad@pdk.io",
+                           "userId" : "5821f37df4a93000014928fa",
+                           "name" : "josh perry",
+                           "_id" : "5821f353f4a93000014928f9",
+                           "role" : "admin"
+                        }
+                     ]
+                  },
+                  {
+                     "name" : "🎣 Joe's Bait Shop",
+                     "panels" : [],
+                     "id" : "57604b80a6a44c1200dba0c9",
+                     "permissions" : []
+                  }
+               ],
+               "permissions" : [
+                  {
+                     "email" : "jordan.mack@gmail.com",
+                     "userId" : "584ac92b10e97a0001dbf4d8",
+                     "name" : "Jordan Mack",
+                     "_id" : "584aca3b10e97a0001dbf4da",
+                     "role" : "reporter"
+                  },
+                  {
+                     "role" : "manager",
+                     "_id" : "598b6ad6ecb0770001abc31a",
+                     "name" : "Greg Corp",
+                     "userId" : "57d89535a5f887000195710b",
+                     "email" : "gregcorp@xmission.com"
+                  }
+               ],
+               "panels" : [
+                  {
+                     "uri" : "https://panel-10702GA.pdk.io/",
+                     "online" : true,
+                     "name" : "🏢 Main Office",
+                     "id" : "10702GA",
+                     "notes" : "",
+                     "registeredDate" : "2016-04-20T17:29:03.510Z"
+                  }
+               ]
+            }
+
+### My OU [GET /ous/mine]
+
+This represents the OU where the currently authenticated user is assigned permission and is commonly used as a root to enumerate all of the entities a user has access to.
+
++ Response 200
+
+    [Organizational Unit][]
+
+        
+### Retrieve an OU [GET]
+
++ Response 200
+
+    [Organizational Unit][]
