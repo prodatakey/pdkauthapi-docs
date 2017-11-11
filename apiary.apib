@@ -335,7 +335,15 @@ When an access token expires the application will need a new one.
 
 If the application requests the scope `offline_access` through any auth flow that supports a refresh token, then a refresh token is provided in the auth flow response. This refresh token is used to request fresh access tokens from the auth system while the user is not actively using the system.
 
-The refresh token should be saved in **secure** durable storage, as it expires only if the user or PDK revokes access to the application.
+The refresh token should be saved in **secure** durable storage. Though it expires only if the user or PDK revokes access to the application, it is also a consumable.
+When consuming a refresh token, a fresh refresh token will be provided in the response alongside the fresh id_token.
+
+Because this could be a rights upgrade, `prompt=consent` must be included any time `offline_access` is in the auth flow request scopes.
+This ensures that the user is properly advised of the change.
+
+> **NOTE**:
+    Since it is consumable, you must assess if you need to take precautions against consuming it multiple times.
+    This is probably necessary to address with multi-instance—including multi-environment (dev,test,prod)—client applications.
 
 Applications that require `offline_access` should be quite rare as this is only needed for accessing the user's system while they are not actively using the requesting application.
 
