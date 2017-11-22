@@ -134,8 +134,8 @@ The response to the POST request is JSON formatted data containing the access an
 
 | Value | Description |
 |-------|-------------|
-| access_token | The access token that may now be used for making authenticated API requests. |
-| id_token |  This is an encoded JWT that contains information on the authenticated user. It is described in more detail later. |
+| access_token | The access token that may now be used for making requests to the user info endpoint. |
+| id_token | The token to use for making auth API requests. This is an encoded JWT that contains information on the authenticated user. It is described in the Token Types section. |
 | refresh_token | This will be present if the `offline_access` scope was requested. This token is used to get a fresh access token when the current one expires. The refresh token never expires and should be durably and securely stored by your application. |
 | token_type | The type of access token returned, this is currently always `Bearer`. |
 | expires_in | Expiration time of the Access Token in seconds since the response was generated |
@@ -216,8 +216,8 @@ The response to the POST request is JSON formatted data containing the access, a
 
 | Value | Description |
 |-------|-------------|
-| access_token | The access token that may now be used for making authenticated API requests. |
-| id_token |  This is an encoded JWT that contains information on the authenticated user. It is described in more detail later. |
+| access_token | The access token that may now be used for making requests to the user info endpoint. |
+| id_token | The token to use for making auth API requests. This is an encoded JWT that contains information on the authenticated user. It is described in the Token Types section. |
 | token_type | The type of access token returned, this is currently always `Bearer`. |
 | expires_in | Expiration time of the Access Token in seconds since the response was generated |
 
@@ -235,8 +235,8 @@ An example JSON encoded response may look like this:
 > *NOTE*: This authentication flow does not require the use of refresh tokens as the client can retrieve a fresh token from the token endpoint, without user-interaction, at any time.
 
 ### 2. Make API Requests
-Now that your application has a valid access token it cannt  be used to make authenticated requests to PDK APIs.
-This is done by simply including the access token in the Bearer type Authorization header of your requests.
+This valid ID token can now be used to make authenticated requests to the PDK auth APIs.
+This is done by including the `id_token` in the Bearer type Authorization header of your requests.
 
 The Authorization header should look similar to:
 
@@ -278,9 +278,9 @@ Once the user successfully authenticates, their user-agent will be redirected ba
 
 | Value | Description |
 |-------|-------------|
-| access_token | The access token that may now be used for making authenticated API requests. |
+| access_token | The access token that may now be used for making requests to the user info endpoint. |
+| id_token | The token to use for making auth API requests. This is an encoded JWT that contains information on the authenticated user. It is described in more detail later. |
 | token_type | The type of access token returned, this is currently always `Bearer`. |
-| id_token |  This is an encoded JWT that contains information on the authenticated user. It is described in more detail later. |
 | expires_in | Expiration time of the Access Token in seconds since the response was generated. |
 | state | Client value included in the `state` parameter of the authentication request. |
 
@@ -353,7 +353,7 @@ The application will need to obtain a fresh token in order to continue making au
 In the normal case, of an application that is not using `offline_access`, the application will need to process the auth flow in order to retrieve fresh tokens.
 
 #### Request
-Requesting a refresh token is very similar to exchanging an authorization code for an access token.
+Requesting a fresh ID token using a refresh token is very similar to exchanging an authorization code for an ID token.
 Your application will need to make an HTTP POST request to the token endpoint which can be found in the discovery document `token_endpoint` key.
 
 To make this request, the application must use a standard HTTP basic authentication header with the `client_id` as the user name and `client_secret` as the password used to generate this header.
@@ -383,14 +383,16 @@ The response to the POST request is JSON formatted data containing the fresh acc
 
 | Value | Description |
 |-------|-------------|
-| id_token | The access token that may now be used for making authenticated API requests. This is an encoded JWT that is described in more detail later. |
-| token_type | The type of access token returned, this is currently always `Bearer`.
+| id_token | The token that may now be used for making auth API requests. This is an encoded JWT that is described in more detail in the Token Types section. |
+| refresh_token | The refresh token value is consumable. This fresh value should be used in the next refresh request. |
+| token_type | The type of access token returned, this is currently always `Bearer`. |
 
 An example JSON encoded response may look like this:
 
 ```
 {
   "id_token":"eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiJ9...GmUdC2H13YMCwc30Z3l5RCrbwQ",
+  "refresh_token":"76c3caeeced2543cfd5c4e8c074790ad",
   "token_type":"Bearer"
 }
 ```
