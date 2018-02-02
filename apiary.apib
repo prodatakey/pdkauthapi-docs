@@ -347,6 +347,14 @@ This ensures that the user is properly advised of the change.
 
 Applications that require `offline_access` should be quite rare as this is only needed for accessing the user's system while they are not actively using the requesting application.
 
+## Panel Token
+
+In order to allow secure control of access to hardware in a distributed system, the token that is retrieved from the `panels/<id>/token` is a JWT like the ID token, but while the ID token has an audience specifying the API client, the panel token specifies the specific panel ID.
+
+After validating the JWT signature, the panel will ensure that it is the audience for the provided panel token and deny the request if not.
+
+The other major difference with the panel token is that it expires much more frequently than the other tokens, it is valid for 5 minutes.
+
 ## Token Lifetime
 For security reasons, these tokens (except the refresh token) expire frequently and will cease to work after they expire.
 The application will need to obtain a fresh token in order to continue making authenticated requests to API endpoints.
