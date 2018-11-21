@@ -436,6 +436,7 @@ A distinct Panel entity.
     + `notes` (required, string) ... User-defined notes.
     + `online` (required, boolean) ... The panel's online state.
     + `registeredDate` (required, string) ... Date and time that the panel was registered.
+    + `metadata` (optional, object) ... An optional peice of opaque metadata stored with the entity
 
     + Body
     
@@ -445,7 +446,8 @@ A distinct Panel entity.
                  "uri" : "https://panel-10702GA.pdk.io/",
                  "notes" : "",
                  "online" : true,
-                 "registeredDate" : "2016-04-20T17:29:03.510Z"
+                 "registeredDate" : "2016-04-20T17:29:03.510Z",
+                 "metadata": {}
               }
     
 ### Retrieve a Panel [GET]
