@@ -164,7 +164,7 @@ The Authorization header should look similar to:
 
 ## Client Credentials Flow
 
-> **WARNING**: This flow should only be used for Clients that can keep their credentials private and that authorize any requests that make use of the token (e.g. a server-side web application or API protected by OAuth2).
+> **WARNING**: This flow should only be used for Clients that can keep their credentials private and that authorize any requests that make use of the token (e.g. a server-side web application with a login or an API protected by OAuth2).
 
 When used in an application where the client credentials can be kept secure, they can be used to directly retrieve an access token, bearing the Client's identity, from the token endpoint.
 The other flows rely on a user delegating their identity instead of the application accessing the API having its own identity.
