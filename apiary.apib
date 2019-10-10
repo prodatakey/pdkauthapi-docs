@@ -100,8 +100,8 @@ The title value will look like `Success code=fc04ddce7bc3435f5e20b9f3f6f8bcce`
 For server side web applications that are able to securely store the `client_id` and `client_secret` behind authenticated endpoints, we can also redirect authentication responses to an https endpoint of the application.
 
 ### 3. Exchange Authorization Code
-The authorization code is a one-time-use code that your application uses to retrieve an access token which can then be used to make authenticated API requests.
-To exchange the authorization code for an access token your application needs to make an HTTP POST request to the token endpoint of the auth system.
+The authorization code is a one-time-use code that your application uses to retrieve an id token which can then be used to make authenticated API requests.
+To exchange the authorization code for a token your application needs to make an HTTP POST request to the token endpoint of the auth system.
 The token endpoint is located in the discovery document `token_endpoint` key.
 
 To make this request, the application must create a standard HTTP basic authentication header with the `client_id` as the user name and `client_secret` as the password.
@@ -134,7 +134,7 @@ The response to the POST request is JSON formatted data containing the access an
 
 | Value | Description |
 |-------|-------------|
-| access_token | The access token that may now be used for making requests to the user info endpoint. |
+| access_token | The access token that may now be used for making requests only to the user info endpoint (available in the discovery doc). |
 | id_token | The token to use for making auth API requests. This is an encoded JWT that contains information on the authenticated user. It is described in the Token Types section. |
 | refresh_token | This will be present if the `offline_access` scope was requested. This token is used to get a fresh access token when the current one expires. The refresh token never expires and should be durably and securely stored by your application. |
 | token_type | The type of access token returned, this is currently always `Bearer`. |
@@ -167,12 +167,14 @@ The Authorization header should look similar to:
 > **WARNING**: This flow should only be used for Clients that can keep their credentials private and that authorize any requests that make use of the token (e.g. a server-side web application or API protected by OAuth2).
 
 When used in an application where the client credentials can be kept secure, they can be used to directly retrieve an access token, bearing the Client's identity, from the token endpoint.
+The other flows rely on a user delegating their identity instead of the application accessing the API having its own identity.
 
 ### Service Account Analog
 
-This authentication flow mimics the concept of a service account. When enabling this flow, the client will also be assigned an identity and a role-based permission in a specific container, similar to a user.
+This authentication flow mimics the concept of a service account.
+When enabling this flow, an identity will be created for the client and a role-based permission in a specific OU, similar to a user.
 
-Auth API requests made with a token retrieved using this flow are authorized and audit logged using this client identity and are constrained by the applied role and assigned container.
+Auth API requests made with a token retrieved using this flow are authorized and audit logged using this identity and are constrained by the applied role and assigned OU(s).
 
 ### Setup
 
@@ -182,12 +184,14 @@ To create an integration that does not meet the use-cases of the other flows, pl
 The goal of this process is to ensure proper use-case match and to audit that the Client security model meets the needs of the customer.
 
 In your initial contact, please provide as much information as possible on the application use-case requiring this flow and on the authentication and authorization system that the client will be used behind.
-Also include the role and container ID where the client's permission should be granted.
+Also include an email address that the client's identity should be created under (usually something like support@yourdomain.com), this is the identity the users will see in their audit logs when your software interacts with their systems.
+
+Any user can then simply add a permission for your client's identity, for any desired role, to their OU to grant your application access to their systems.
 
 A member of our developer relations team will follow up with any additional questions or concerns and enable the flow when it is deemed that the solution meets the use-case and security requirements.
 
-### 1. Retrieve Access Token
-An access token can be used to make authenticated API requests. To retrieve an access token your application needs to make an HTTP POST request to the token endpoint of the auth system.
+### 1. Retrieve The Token
+An id token can be used to make authenticated API requests. To retrieve an id token your application needs to make an HTTP POST request to the token endpoint of the auth system.
 The token endpoint is located in the discovery document `token_endpoint` key.
 
 To make this request, the application must create a standard HTTP basic authentication header with the `client_id` as the user name and `client_secret` as the password.
