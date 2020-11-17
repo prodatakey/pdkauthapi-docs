@@ -618,3 +618,771 @@ This represents the OU where the currently authenticated user is assigned permis
 + Response 200
 
     [Organizational Unit][]
+    
+# Group Webhooks
+    
+## OU Hooks [/ous/{ou_id}/hooks] 
+
+The functionality is available for [Integrator] roles.
+
++ Model
+
+    + `name` (required, string) ... Name of the hook. Maximum length is 70.
+    + `url` (required, string) ... URL that will be called with events data. HTTPS protocol is required. Should be able to handle POST requests.
+    + `scope` (required, array<string> or string) ... Scope of the hook. Scope may contain an explicit list of panel ids to get events from or have one of the special values: 'ou', 'ouRecursive'. Scope 'ou' gives an ability to get events from all cloud nodes within the OU even when membership of that OU changes. Scope 'ouRecursive' acts similarly, but is applied to children in addition to the OU where the hook is registered.
+    + `authentication` (required, object) ... Object that specifies authentication mechanism to be used in POST requests. Field `type` is required. Possible values: 'None', 'Basic'. 'None' means no authentication. 'Basic' means Basic authentication. For the 'Basic' type, 'user' and 'password' fields are required.
+    + `secret` (optional, string) ... Secret of the hook. Maximum length is 255. If specified, header X_PDK_SIGNATURE will be present in request. This header will contain SHA-1 HMAC calculated using the secret value.
+    + `events` (required, array[string]) ... Specific events to subscribe to. Events come in two types, panel events and OU events. Panel events refer to the activity on the cloud nodes. OU events refer to the management activity within the organization. Panel and OU events can't be present together for one hook. For OU events, only 'ou' and 'ouRecursive' scopes are valid. Panel events can be applied to any scope.  Descriptions for each event can be found in a later section of this document.
+        + Panel events
+            + `door.input.dps.opened`,
+            + `door.input.dps.closed`,
+            + `door.input.rex.on`,
+            + `door.input.rex.off`,
+            + `door.input.relay.on`,
+            + `door.input.relay.off`,
+            + `door.input.virtualread`,
+            + `door.forceopen.on`,
+            + `door.forceopen.off`,
+            + `door.forceclose.on`,
+            + `door.forceclose.off`,
+            + `door.autoopen.on`,
+            + `door.autoopen.off`,
+            + `door.autoopen.override.on`,
+            + `door.autoopen.override.off`,
+            + `door.alarm.propped.on`,
+            + `door.alarm.propped.off`,
+            + `door.alarm.propped.alloff`,
+            + `door.alarm.forced`,
+            + `door.alarm.forced.cleared`,
+            + `door.request.unknown`,
+            + `door.request.found`,
+            + `door.request.allowed`,
+            + `door.request.multiallowed`,
+            + `door.request.denied`,
+            + `door.request.duress`,
+            + `endpoint.input.pi.on`,
+            + `endpoint.input.pi.off`,
+            + `endpoint.input.pi.status`,
+            + `endpoint.input.pp.status`,
+            + `endpoint.input.pb.status`,
+            + `endpoint.input.pb.connected`,
+            + `endpoint.input.pb.disconnected`,
+            + `endpoint.input.bh.state`,
+            + `endpoint.input.po.present`,
+            + `endpoint.input.po.absent`,
+            + `endpoint.input.lp.on`,
+            + `endpoint.input.lp.off`,
+            + `endpoint.alarm.comloss.on`,
+            + `endpoint.alarm.comloss.off`,
+            + `endpoint.added`,
+            + `endpoint.deleted`,
+            + `error.card.parse`,
+            + `error.packetized.protocol`,
+            + `notification.person.created`,
+            + `notification.person.updated`,
+            + `notification.person.deleted`,
+            + `notification.intercom.created`,
+            + `notification.intercom.updated`,
+            + `notification.intercom.deleted`,
+            + `notification.client.command`,
+            + `notification.device.created`,
+            + `notification.device.updated`,
+            + `notification.device.deleted`,
+            + `entity.added`,
+            + `entity.modified`,
+            + `entity.removed`,
+            + `floorgroup.activated`,
+            + `panel.connected`,
+            + `panel.disconnected`
+        + OU events
+            + `ou.created`,
+            + `ou.updated`,
+            + `ou.deleted`,
+            + `panel.created`,
+            + `panel.updated`,
+            + `panel.deleted`,
+            + `permission.created`,
+            + `permission.deleted`
+    + `active` (optional, boolean) ... Status of the hook. Default value is `true`. If `false` is set the hook URL will never be called.
+    + `expiresAt` (optional, string) ... Timestamp when this hook's active status will be set to false.. This field can only be set to values in the future..
+    + `sslVerification` (optional, boolean) … If enabled, the SSL certificate of the server that handles hook URL will be checked. Setting this parameter to `false` will allow usage of self-signed certificates by the server. Default value is `true`.
+    + `secrecyLevel` (optional, number) ... Allows control over the sensitivity of information that will be passed in the event body to the external URL.  If you don’t know what secrecyLevel you need set to 2 and lower only as your use cases dictate.  
+        + Default: `1`
+        + Members
+            + `0` - all information.
+            + `1` - no security info (pin, card number).
+            + `2` - remove all filtered by 1 plus no personal info (people names).
+
+    + Headers
+    
+            Authorization: Bearer {token}
+    
+    + Body
+    
+            {
+                "id": "5f5f732e54760008587fe4c3",
+                "name": "hookName",
+                "url": "https://mywebsite.com",
+                "scope": "ou",
+                "secret": "gu8fHEzB1sMNXCaoTiAm",
+                "authentication": {
+                    "type": "Basic",
+                    "user": "guest",
+                    "password": "guest"
+                },
+                "events": [
+                    "door.input.rex.off"
+                ],
+                "active": true,
+                "sslVerification": true,
+                "expiresAt": "2022-02-01 22:23:11 UTC-6",
+                "secrecyLevel": 2
+            }
+
+
+### Retrieve all Hooks [GET /ous/{ou_id}/hooks]
+
++ Parameters
+
+    + ou_id (required, string) 
+        `id` of the OU.
+
++ Request
+
+    + Headers
+    
+            Authorization: Bearer {token}
+
++ Response 200 (application/json)
+
+    + `id` (required, string) ... `id` of the Hook.
+    + `name` (required, string) ... Name of the Hook.
+    + `url` (required, string) ... URL of the hook.
+    + `scope` (required, string or array[string]) ... Scope of the hook.
+    + `authentication` (required, object) ... Authentication information of the hook: type and details.
+    + `secret` (optional, string) ... Secret of the hook.
+    + `events` (required, array[string]) ... Events to subscribe to.
+    + `active` (required, boolean) ... Status of the hook.
+    + `expiresAt` (required, string) ... Timestamp when  this hook’s active status will be set to false.
+    + `sslVerification` (optional, boolean) … Enabled/disabled SSL certificate verification.
+    + `secrecyLevel` (required, number) ... What information will be shown in the event's body.
+
+    + Headers
+    
+            Link: <https://accounts.pdk.io/api/ous/454557759a01deb9874c02f6/hooks>; rel="next", <https://accounts.pdk.io/api/ous/454557759a01deb9874c02f6/hooks>; rel="last"
+            X-Total-Count: 2
+    
+    + Body
+    
+            [
+                {
+                    "id": "5f5f732e54760008587fe4c6",
+                    "name": "firstHook",
+                    "url": "https://mywebsite.com",
+                    "scope": "ouRecursive",
+                    "secret": "gu8fHEzB1sMNXCaoTiAm23we",
+                    "authentication": {
+                        "type": "Basic",
+                        "user": "userName",
+                        "password": "12345"
+                    },
+                    "events": [
+                        "door.input.rex.off",
+                        "error.packetized.protocol",
+                        "endpoint.added"
+                    ],
+                    "active": true,
+                    "sslVerification": true,
+                    "expiresAt": "2023-08-01 22:23:11 UTC-6",
+                    "secrecyLevel": 1
+                },
+                {
+                    "id": "5f5f732e54760008587fe496",
+                    "name": "secondHook",
+                    "url": "https://mywebsite.com",
+                    "scope": "ou",
+                    "secret": "EzB1sMNXCaoTiAm",
+                    "authentication": {
+                        "type": "None"
+                    },
+                    "events": [
+                        "ou.created",
+                        "ou.updated",
+                        "permission.created"
+                    ],
+                    "active": false,
+                    "expiresAt": "2022-02-01 22:23:11 UTC-6",
+                    "sslVerification": true,
+                    "secrecyLevel": 2
+                }
+            ]
+
++ Response 400 (application/json)
++ Response 401 (application/json)
++ Response 403 (application/json)
++ Response 404 (application/json)
+
+### Retrieve a Hook [GET /ous/{ou_id}/hooks/{hook_id}]
+
++ Parameters
+
+    + ou_id (required, string) ... `id` of the OU.
+    + hook_id (required, string) ... `id` of the Hook.
+
++ Request
+
+    + Headers
+    
+            Authorization: Bearer {token}
+
++ Response 200 (application/json)
+
+    + `id` (required, string) ... `id` of the Hook.
+    + `name` (required, string) ... Hook name.
+    + `url` (required, string) ... URL the hook will call.
+    + `scope` (required, string or array[string]) ... Scope of the hook.
+    + `authentication` (required, object) ... Authentication information of the hook.
+    + `secret` (optional, string) ... Secret.
+    + `events` (required, array[string]) ... List of events.
+    + `active` (required, boolean) ... Status of the hook.
+    + `expiresAt` (required, string) ... Timestamp when  this hook’s active status will be set to false.
+    + `sslVerification` (optional, boolean) … Enabled/disabled SSL certificate verification.
+    + `secrecyLevel` (required, number) ... Level of the hook.
+    
+    + Body
+    
+            {
+                "id": "5f5f732e54760008587fe496",
+                "name": "secondHook",
+                "url": "https://mywebsite.com",
+                "scope": "ou",
+                "secret": "EzB1sMNXCaoTiAm",
+                "authentication": {
+                    "type": "None"
+                },
+                "events": [
+                    "ou.created",
+                    "ou.updated",
+                    "permission.created"
+                ],
+                "active": false,
+                "sslVerification": true,
+                "expiresAt": "2022-02-01 22:23:11 UTC-6",
+                "secrecyLevel": 2
+            }
+
++ Response 400 (application/json)
++ Response 401 (application/json)
++ Response 403 (application/json)
++ Response 404 (application/json)
+
+### Create a Hook [POST]
++ Parameters
+
+    + ou_id (required, string) ... `id` of the OU.
+    
++ Request (application/json)
+
+    [OU Hooks][]
+
++ Response 204
++ Response 400 (application/json)
++ Response 401 (application/json)
++ Response 403 (application/json)
++ Response 404 (application/json)
+
+### Update a Hook [PUT /ous/{ou_id}/hooks/{hook_id}]
+
++ Parameters
+
+    + ou_id (required, string) ... `id` of the OU.
+    + hook_id (required, string) ... `id` of the Hook.
+
++ Request
+
+ 
+    + `name` (required, string) ... Name of the Hook.
+    + `url` (required, string) ... URL the hook will call.
+    + `scope` (required, string or array[string]) ... Scope of the hook. The scope shouldn't be changed from 'ou' or 'ouRecursive' to array of panels and vice versa.
+    + `authentication` (required, object) ... Authentication information of the hook: type and details.
+    + `secret` (optional, string) ... Secret of the hook.
+    + `events` (required, array[string]) ... Events to subscribe to. All events should belong to the same group: panel events orOU events.
+    + `active` (required, boolean) ... Status of the hook.
+    + `expiresAt` (required, string) ... Timestamp when  this hook’s active status will be set to false.
+    + `sslVerification` (optional, boolean) … Enabled/disabled SSL certificate verification.
+    + `secrecyLevel` (required, number) ... What information will be shown in the event's body.
+
+    + Headers
+    
+            Authorization: Bearer {token}
+
++ Response 204 (application/json)
++ Response 400 (application/json)
++ Response 401 (application/json)
++ Response 403 (application/json)
++ Response 404 (application/json)
+
+### Delete a Hook [DELETE /ous/{ou_id}/hooks/{hook_id}]
++ Parameters
+
+    + ou_id (required, string) ... `id` of the OU.
+    + hook_id (required, string) ... `id` of the Hook.
+
++ Request
+
+    + Headers
+    
+            Authorization: Bearer {token}
+
++ Response 204
++ Response 400 (application/json)
++ Response 401 (application/json)
++ Response 403 (application/json)
++ Response 404 (application/json)
+
+## Panel Hooks [/panels/{panel_id}/hooks]
+
+The functionality is available for [Integrator] roles.
+
++ Model
+
+    + `name` (required, string) ... Name of the hook. Maximum length is 70.
+    + `url` (required, string) ... URL that will be called with events data. HTTPS protocol is required. Should be able to handle POST requests.
+    + `authentication` (required, object) ... Object that specifies authentication mechanism to be used in POST requests. Field `type` is required. Possible values: 'None', 'Basic'. 'None' means no authentication. 'Basic' means Basic authentication. For 'Basic' type, 'user' and 'password' fields are required.
+    + `secret` (optional, string) ... Secret of the hook. Maximum length is 255. If specified, header X_PDK_SIGNATURE will be present in request. This header will contain SHA-1 HMAC calculated using the secret value.
+    + `events` (required, array[string]) ... Panel events.
+        + Members
+            + `door.input.dps.opened` - Generated when DPS sensor on a device reports OPEN state.,
+            + `door.input.dps.closed`,
+            + `door.input.rex.on`,
+            + `door.input.rex.off`,
+            + `door.input.relay.on`,
+            + `door.input.relay.off`,
+            + `door.input.virtualread`,
+            + `door.forceopen.on`,
+            + `door.forceopen.off`,
+            + `door.forceclose.on`,
+            + `door.forceclose.off`,
+            + `door.autoopen.on`,
+            + `door.autoopen.off`,
+            + `door.autoopen.override.on`,
+            + `door.autoopen.override.off`,
+            + `door.alarm.propped.on`,
+            + `door.alarm.propped.off`,
+            + `door.alarm.propped.alloff`,
+            + `door.alarm.forced`,
+            + `door.alarm.forced.cleared`,
+            + `door.request.unknown`,
+            + `door.request.found`,
+            + `door.request.allowed`,
+            + `door.request.multiallowed`,
+            + `door.request.denied`,
+            + `door.request.duress`,
+            + `endpoint.input.pi.on`,
+            + `endpoint.input.pi.off`,
+            + `endpoint.input.pi.status`,
+            + `endpoint.input.pp.status`,
+            + `endpoint.input.pb.status`,
+            + `endpoint.input.pb.connected`,
+            + `endpoint.input.pb.disconnected`,
+            + `endpoint.input.bh.state`,
+            + `endpoint.input.po.present`,
+            + `endpoint.input.po.absent`,
+            + `endpoint.input.lp.on`,
+            + `endpoint.input.lp.off`,
+            + `endpoint.alarm.comloss.on`,
+            + `endpoint.alarm.comloss.off`,
+            + `endpoint.added`,
+            + `endpoint.deleted`,
+            + `error.card.parse`,
+            + `error.packetized.protocol`,
+            + `notification.person.created`,
+            + `notification.person.updated`,
+            + `notification.person.deleted`,
+            + `notification.intercom.created`,
+            + `notification.intercom.updated`,
+            + `notification.intercom.deleted`,
+            + `notification.client.command`,
+            + `notification.device.created`,
+            + `notification.device.updated`,
+            + `notification.device.deleted`,
+            + `entity.added`,
+            + `entity.modified`,
+            + `entity.removed`,
+            + `floorgroup.activated`,
+            + `panel.connected`,
+            + `panel.disconnected`
+    + `active` (optional, boolean) ... Status of the hook. Default value is `true`. If `false` is set, the hook URL will never be called.
+    + `expiresAt` (optional, string) ... Timestamp when this hook’s active status will be set to false. This field can only be set to values in the future.
+    + `sslVerification` (optional, boolean) … If enabled, the SSL certificate of the server that handles hook URL will be checked. Setting this parameter to `false` will allow usage of self-signed certificates by the server. Default value is `true`.
+    + `secrecyLevel` (optional, number) ... Allows control over the sensitivity of information that will be passed in the event body to the external URL.  If you don’t know what secrecyLevel you need set to 2 and lower only as your use cases dictate.
+        + Default: `1`
+        + Members
+            + `0` - all information.
+            + `1` - no security info (pin, card number).
+            + `2` - remove all filtered by 1 plus no personal info (people names).
+
+    + Headers
+    
+            Authorization: Bearer {token}
+    
+    + Body
+    
+            {
+                "id": "5f5f732e54760008587fe4c3",
+                "name": "hookName",
+                "url": "https://mywebsite.com",
+                "secret": "gu8fHEzB1sMNXCaoTiAm",
+                "authentication": {
+                    "type": "None"
+                },
+                "events": [
+                    "door.alarm.propped.on"
+                ],
+                "active": true,
+                "expiresAt": "2022-02-01 22:23:11 UTC-6",
+                “sslVerification”: true,
+                "secrecyLevel": 2
+            }
+
+
+### Retrieve all Hooks [GET /panels/{panel_id}/hooks]
+
++ Parameters
+
+    + panel_id (required, string) 
+        `id` of the Panel.
+
++ Request
+
+    + Headers
+    
+            Authorization: Bearer {token}
+
++ Response 200 (application/json)
+
+    + `id` (required, string) ... `id` of the Hook.
+    + `name` (required, string) ... Name of the Hook.
+    + `url` (required, string) ... URL of the hook.
+    + `scope` (required, string or array[string]) ... Scope of the hook.
+    + `authentication` (required, object) ... Authentication information of the hook: type and details.
+    + `secret` (optional, string) ... Secret of the hook.
+    + `events` (required, array[string]) ... Events to subscribe to.
+    + `active` (required, boolean) ... Status of the hook.
+    + `expiresAt` (required, string) ... Timestamp when this hook’s active status will be set to false.
+    + `sslVerification` (optional, boolean) … Enabled/disabled SSL certificate verification.
+    + `secrecyLevel` (required, number) ... What information will be shown in the event's body.
+
+    + Headers
+    
+            Link: <https://accounts.pdk.io/api/panels/14402II/hooks>; rel="next", <https://accounts.pdk.io/api/panels/14402II/hooks>; rel="last"
+            X-Total-Count: 2
+    
+    + Body
+    
+            [
+                {
+                    "id": "5f5f732e54760008587fe4c6",
+                    "name": "firstHook",
+                    "url": "https://mywebsite.com",
+                    "scope": ["14402II"],
+                    "secret": "gu8fHEzB1sMNXCaoTiAm23we",
+                    "authentication": {
+                        "type": "Basic",
+                        "user": "userName",
+                        "password": "12345"
+                    },
+                    "events": [
+                        "error.packetized.protocol",
+                        "endpoint.added"
+                    ],
+                    "active": true,
+                    "expiresAt": "2023-08-01 22:23:11 UTC-6",
+                    "sslVerification": true,
+                    "secrecyLevel": 1
+                },
+                {
+                    "id": "5f5f732e54760008587fe496",
+                    "name": "secondHook",
+                    "url": "https://mywebsite.com",
+                    "scope": ["14402II", "13402II"],
+                    "secret": "EzB1sMNXCaoTiAm",
+                    "authentication": {
+                        "type": "None"
+                    },
+                    "events": [
+                        "door.input.rex.on",
+                        "door.input.rex.off"
+                    ],
+                    "active": true,
+                    "expiresAt": "2022-02-01 22:23:11 UTC-6",
+                   "sslVerification": true,
+                    "secrecyLevel": 2
+                }
+            ]
+
++ Response 400 (application/json)
++ Response 401 (application/json)
++ Response 403 (application/json)
++ Response 404 (application/json)
+
+### Retrieve a Hook [GET /panels/{panel_id}/hooks/{hook_id}]
+
++ Parameters
+
+    + panel_id (required, string) ... `id` of the Panel.
+    + hook_id (required, string) ... `id` of the Hook.
+
++ Request
+
+    + Headers
+    
+            Authorization: Bearer {token}
+
++ Response 200 (application/json)
+    + `id` (required, string) ... `id` of the Hook.
+    + `name` (required, string) ... Name of the Hook.
+    + `url` (required, string) ... URL of the hook.
+    + `scope` (required, string or array[string]) ... Scope of the hook.
+    + `authentication` (required, object) ... Authentication information of the hook: type and details.
+    + `secret` (optional, string) ... Secret of the hook.
+    + `events` (required, array[string]) ... Events to subscribe to.
+    + `active` (required, boolean) ... Status of the hook.
+    + `sslVerification` (optional, boolean) … Enabled/disabled SSL certificate verification.
+    + `expiresAt` (required, string) ... Timestamp when this hook’s active status will be set to false.
+    + `secrecyLevel` (required, number) ... What information will be shown in the event's body.
+    
+    + Body
+    
+            {
+                "id": "5f5f732e54760008587fe496",
+                "name": "secondHook",
+                "url": "https://mywebsite.com",
+                "scope": ["13402II"],
+                "secret": "EzB1sMNXCaoTiAm",
+                "authentication": {
+                    "type": "None"
+                },
+                "events": [
+                    "door.input.rex.on"
+                ],
+                "active": false,
+                "expiresAt": "2022-02-01 22:23:11 UTC-6",
+                "sslVerification": true,
+                "secrecyLevel": 2
+            }
+
++ Response 400 (application/json)
++ Response 401 (application/json)
++ Response 403 (application/json)
++ Response 404 (application/json)
+
+### Create a Hook [POST]
++ Parameters
+
+    + panel_id (required, string) ... `id` of the Panel.
+    
++ Request (application/json)
+
+    [OU Hooks][]
+
++ Response 204
++ Response 400 (application/json)
++ Response 401 (application/json)
++ Response 403 (application/json)
++ Response 404 (application/json)
+
+### Update a Hook [PUT /panels/{panel_id}/hooks/{hook_id}]
+
++ Parameters
+
+    + panel_id (required, string) ... `id` of the Panel.
+    + hook_id (required, string) ... `id` of the Hook.
+
++ Request
+
+    + `name` (required, string) ... Name of the Hook.
+    + `url` (required, string) ... URL of the hook.
+    + `authentication` (required, object) ... Authentication information of the hook: type and details.
+    + `secret` (optional, string) ... Secret of the hook.
+    + `events` (required, array[string]) ... Events to subscribe to.
+    + `active` (required, boolean) ... Status of the hook.
+    + `expiresAt` (required, string) ... Timestamp when  this hook’s active status will be set to false.
+    + `sslVerification` (optional, boolean) … Enabled/disabled SSL certificate verification.
+    + `secrecyLevel` (required, number) ... What information will be shown in the event's body.
+
+    + Headers
+    
+            Authorization: Bearer {token}
+
++ Response 204 (application/json)
++ Response 400 (application/json)
++ Response 401 (application/json)
++ Response 403 (application/json)
++ Response 404 (application/json)
+
+### Delete a Hook [DELETE /panels/{panel_id}/hooks/{hook_id}]
++ Parameters
+
+    + panel_id (required, string) ... `id` of the Panel.
+    + hook_id (required, string) ... `id` of the Hook.
+
++ Request
+
+    + Headers
+    
+            Authorization: Bearer {token}
+
++ Response 204
++ Response 400 (application/json)
++ Response 401 (application/json)
++ Response 403 (application/json)
++ Response 404 (application/json)
+
+# Group Webhook events
+
+## Panel events
+
+Here is a short description of all events that can be generated by the system. Details on the specific event can be found within the body of the transmitted message.
+
+### door.input.dps.opened
+DPS (Input A) sensor on a device reports OPEN state.
+### door.input.dps.closed
+DPS (Input A) sensor on a device reports CLOSE state.
+### door.input.rex.on
+Request to Exit (Input B) button is pressed.
+### door.input.rex.off
+Request to Exit (Input B) button is released.
+### door.input.relay.on
+Relay on a device is deactivated (lock open).
+### door.input.relay.off
+Relay on a device is activated (lock close).
+### door.input.virtualread
+Emulated credential scan was used on a device. Happens when the device is activated remotely by a person (not a pdk.io website user) for example  activating a device from the Touch app.
+### door.forceopen.on
+Indicates that Force Open state is enabled on a device. Happens when an event rule with the “Force Open” action is triggered.
+### door.forceopen.off
+Indicates that Force Open state is disabled on a device.
+### door.forceclose.on
+Indicates that Force Close state is enabled on a device. Happens when an event rule with the “Force Close” action is triggered.
+### door.forceclose.off
+Indicates that Force Close state is disabled on a device.
+### door.autoopen.on
+Indicates that a device moved to Auto Open On state. This doesn’t necessarily mean that device is open (it depends on the configuration), but only that there is an active auto open rule for this device.
+### door.autoopen.off
+Indicates that a device moved to Auto Open Off state. Lock will be closed on this device.
+### door.autoopen.override.on
+Indicates that active Auto Open state was overridden.
+### door.autoopen.override.off
+Indicates that Auto Open override was cleared.
+### door.alarm.propped.on
+Prop Alarm activated for a device.
+### door.alarm.propped.off
+Prop Alarm cleared for a device.
+### door.alarm.propped.alloff
+Prop Alarm was cleared for all devices in the system.
+### door.alarm.forced
+Force Alarm activated for a device.
+### door.alarm.forced.cleared
+Force Alarm was cleared for a device.
+### door.request.unknown
+Credential scan received from a device, but there is no person associated with this credential.
+### door.request.found
+Credential scan received from a device, there is a person in the system associated with this credential.
+### door.request.allowed
+Access granted after a credential scan.
+### door.request.multiallowed
+Access granted after multiple sequential credential scans.
+### door.request.denied
+Credential scan associated with a person received but that person doesn’t have access.
+### door.request.duress
+Duress PIN was used to access a device.
+### endpoint.input.pi.on
+Input power connected to a controller.
+### endpoint.input.pi.off
+Input power was disconnected from a controller.
+### endpoint.input.pi.status
+Extended information about input power on a controller (voltage, current).
+### endpoint.input.pp.status
+Extended information about peripheral power on a controller (voltage, current).
+### endpoint.input.pb.status
+Extended information about battery on a controller (charge level, time to full/empty, current).
+### endpoint.input.pb.connected
+Battery was connected to a controller.
+### endpoint.input.pb.disconnected
+Battery was disconnected from a controller.
+### endpoint.input.bh.state
+Information about controller’s battery health (Ok/Bad)
+### endpoint.input.po.present
+Overcurrent detected on a controller.
+### endpoint.input.po.absent
+No overcurrent on a controller anymore.
+### endpoint.input.lp.on
+Controller moved to a Low Power Mode state.
+### endpoint.input.lp.off
+Controlled moved to a normal state from Low Power Mode.
+### endpoint.alarm.comloss.on
+Communication with a controller was lost.
+### endpoint.alarm.comloss.off
+Communication restored with a controller.
+### endpoint.added
+New controller’s port is used (either new device or existing device updated).
+### endpoint.deleted
+Some controller’s port is not used anymore (corresponding device deleted or its port changed).
+### error.card.parse
+Error happened during credential scan processing when custom card format is used.
+### error.packetized.protocol
+Error happened during processing credential input from Bluetooth reader.
+### notification.person.created
+New person was added to the system.
+### notification.person.updated
+Person entity was changed. Only direct person fields are checked here, person credentials, groups and changes to rules will not cause this event to fire. Use `entity.modified` to get such events.
+### notification.person.deleted
+Person was removed from the system.
+### notification.intercom.created
+New intercom was added.
+### notification.intercom.updated
+Intercom information was changed.
+### notification.intercom.deleted
+Intercom was removed from the system.
+### notification.client.command
+Command was sent via WebSocket connection (usually from pdk.io website).
+### notification.device.created
+New device was configured.
+### notification.device.updated
+Device entity was changed.
+### notification.device.deleted
+Device was deleted.
+### entity.added
+New entity (Person/Group/Credential/Rule/CardFormat/Elevator/Device/Connection/Partition) was added to the system.
+### entity.modified
+Entity was changed. Includes dependent entities updates, like person was added to a group, device was removed from a rule.
+### entity.removed
+Entity was removed from the system.
+### floorgroup.activated
+Floor group (elevators) was activated.
+### panel.connected
+Cloud node has established a connection to the cloud.
+### panel.disconnected
+Cloud node connection to the cloud has been severed.
+
+## OU events
+
+Here is a short description of all events that can be generated by the system. Details on the specific event can be found within the body of the transmitted message.
+
+### ou.created
+New customer organization was added.
+### ou.updated
+Organization was updated (name changed, optional features enabled/disabled)
+### ou.deleted
+Organization was removed from the system.
+### panel.created
+New cloud node was added to an organization.
+### panel.updated
+Cloud node was changed (name or description changed).
+### panel.deleted
+Cloud node was removed from an organization.
+### permission.created
+New user permission was granted.
+### permission.deleted
+User permission was revoked.
