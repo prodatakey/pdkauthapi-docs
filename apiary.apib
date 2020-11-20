@@ -769,9 +769,6 @@ The functionality is available for [Integrator] roles.
 
     + Headers
     
-            Link: <https://accounts.pdk.io/api/ous/454557759a01deb9874c02f6/hooks>; rel="next", <https://accounts.pdk.io/api/ous/454557759a01deb9874c02f6/hooks>; rel="last"
-            X-Total-Count: 2
-    
     + Body
     
             [
@@ -885,7 +882,7 @@ The functionality is available for [Integrator] roles.
 
     [OU Hooks][]
 
-+ Response 204
++ Response 201 (application/json)
 + Response 400 (application/json)
 + Response 401 (application/json)
 + Response 403 (application/json)
@@ -952,7 +949,7 @@ The functionality is available for [Integrator] roles.
     + `secret` (optional, string) ... Secret of the hook. Maximum length is 255. If specified, header X_PDK_SIGNATURE will be present in request. This header will contain SHA-1 HMAC calculated using the secret value.
     + `events` (required, array[string]) ... Panel events.
         + Members
-            + `door.input.dps.opened` - Generated when DPS sensor on a device reports OPEN state.,
+            + `door.input.dps.opened`,
             + `door.input.dps.closed`,
             + `door.input.rex.on`,
             + `door.input.rex.off`,
@@ -1073,10 +1070,7 @@ The functionality is available for [Integrator] roles.
     + `sslVerification` (optional, boolean) … Enabled/disabled SSL certificate verification.
     + `secrecyLevel` (required, number) ... What information will be shown in the event's body.
 
-    + Headers
-    
-            Link: <https://accounts.pdk.io/api/panels/14402II/hooks>; rel="next", <https://accounts.pdk.io/api/panels/14402II/hooks>; rel="last"
-            X-Total-Count: 2
+    + HeadersCorrec
     
     + Body
     
