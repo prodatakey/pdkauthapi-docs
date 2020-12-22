@@ -42,8 +42,91 @@ Standard HTTP cache headers are used when delivering the document and should be 
 # Authentication Flows
 There are a number of supported authentication flows that are used with certain application types.
 
-## Installed Applications Flow
-This flow is for an application that is installed on a user's desktop computer or mobile device.
+## Client Credentials Flow
+This flow is most appropriate for backend integrations where the client credentials can be kept secure and user interaction is not expected.  Access is direct and is not tied to a specific users identity but instead upon the identity of the integration.
+
+> **WARNING**: This flow should only be used for Clients that can keep their credentials private and that authorize any requests that make use of the token (e.g. a server-side web application with a login or an API protected by OAuth2).
+
+
+itch### Service Account Analog
+
+This authentication flow mimics the concept of a service account.
+When enabling this flow, an identity will be created for the client and a role-based permission in a specific OU, similar to a user.
+
+Auth API requests made with a token retrieved using this flow are authorized and audit logged using this identity and are constrained by the applied role and assigned OU(s).
+
+### Setup
+
+The Client must be explicitly enabled to use this flow and is granted on a case-by-case basis.
+
+To create an integration that does not meet the use-cases of the other flows, please reach out to support with information on the application.
+The goal of this process is to ensure proper use-case match and to audit that the Client security model meets the needs of the customer.
+
+In your initial contact, please provide as much information as possible on the application use-case requiring this flow and on the authentication and authorization system that the client will be used behind.
+Also include an email address that the client's identity should be created under (usually something like support@yourdomain.com), this is the identity the users will see in their audit logs when your software interacts with their systems.
+
+Any user can then simply add a permission for your client's identity, for any desired role, to their OU to grant your application access to their systems.
+
+A member of our developer relations team will follow up with any additional questions or concerns and enable the flow when it is deemed that the solution meets the use-case and security requirements.
+
+### 1. Retrieve The Token
+An id token can be used to make authenticated API requests. To retrieve an id token your application needs to make an HTTP POST request to the token endpoint of the auth system.
+The token endpoint is located in the discovery document `token_endpoint` key.
+
+To make this request, the application must create a standard HTTP basic authentication header with the `client_id` as the user name and `client_secret` as the password.
+
+#### Request
+The request must contain the following form-urlencoded parameter:
+
+| Parameter | Description |
+|-----------|-------------|
+| grant_type | This must contain the value `client_credentials` as specified by the OAuth 2 specification. |
+
+The raw HTTP request may look like this:
+
+```
+POST /oauth2/token HTTP/1.1
+Host: accounts.pdk.io
+Content-Type: application/x-www-form-urlencoded
+Basic MmE2NmEzNzlkZjgzYjU1NzE2YTNhZWU5Mjk0ZWYxNjU6eW91cl9jbGllbnRfc2VjcmV0
+
+grant_type=client_credentials
+```
+
+#### Response
+
+The response to the POST request is JSON formatted data containing the access, and id tokens.
+
+| Value | Description |
+|-------|-------------|
+| access_token | The access token that may now be used for making requests to the user info endpoint. |
+| id_token | The token to use for making auth API requests. This is an encoded JWT that contains information on the authenticated user. It is described in the Token Types section. |
+| token_type | The type of access token returned, this is currently always `Bearer`. |
+| expires_in | Expiration time of the Access Token in seconds since the response was generated |
+
+An example JSON encoded response may look like this:
+
+```
+{
+  "access_token":"SlAV32hkKG"
+  "id_token":"eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiJ9...GmUdC2H13YMCwc30Z3l5RCrbwQ",
+  "token_type":"Bearer",
+  "expires_in": 3600
+}
+```
+
+> *NOTE*: This authentication flow does not require the use of refresh tokens as the client can retrieve a fresh token from the token endpoint, without user-interaction, at any time.
+
+### 2. Make API Requests
+This valid ID token can now be used to make authenticated requests to the PDK auth APIs.
+This is done by including the `id_token` in the Bearer type Authorization header of your requests.
+
+The Authorization header should look similar to:
+
+    Authorization: Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiJ9...GmUdC2H13YMCwc30Z3l5RCrbwQ
+
+## Custom Installed Applications Flow
+This flow is for an application that is installed on a user's desktop computer or mobile device and relies on a user delegating their identity.  It is not appropriate for integrations that are expected to operate in the background as it requires user interaction.
 The client application must have access to the system browser or a hosted web view in order to facilitate user authentication with this flow.
 
 There are 4 steps to successfully implementing this flow in your application.
@@ -159,94 +242,6 @@ This is done by simply including the access token in the Bearer type Authorizati
 The Authorization header should look similar to:
 
     Authorization: Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiJ9...GmUdC2H13YMCwc30Z3l5RCrbwQ
-
-
-
-## Client Credentials Flow
-
-> **WARNING**: This flow should only be used for Clients that can keep their credentials private and that authorize any requests that make use of the token (e.g. a server-side web application with a login or an API protected by OAuth2).
-
-When used in an application where the client credentials can be kept secure, they can be used to directly retrieve an access token, bearing the Client's identity, from the token endpoint.
-The other flows rely on a user delegating their identity instead of the application accessing the API having its own identity.
-
-### Service Account Analog
-
-This authentication flow mimics the concept of a service account.
-When enabling this flow, an identity will be created for the client and a role-based permission in a specific OU, similar to a user.
-
-Auth API requests made with a token retrieved using this flow are authorized and audit logged using this identity and are constrained by the applied role and assigned OU(s).
-
-### Setup
-
-The Client must be explicitly enabled to use this flow and is granted on a case-by-case basis.
-
-To create an integration that does not meet the use-cases of the other flows, please reach out to support with information on the application.
-The goal of this process is to ensure proper use-case match and to audit that the Client security model meets the needs of the customer.
-
-In your initial contact, please provide as much information as possible on the application use-case requiring this flow and on the authentication and authorization system that the client will be used behind.
-Also include an email address that the client's identity should be created under (usually something like support@yourdomain.com), this is the identity the users will see in their audit logs when your software interacts with their systems.
-
-Any user can then simply add a permission for your client's identity, for any desired role, to their OU to grant your application access to their systems.
-
-A member of our developer relations team will follow up with any additional questions or concerns and enable the flow when it is deemed that the solution meets the use-case and security requirements.
-
-### 1. Retrieve The Token
-An id token can be used to make authenticated API requests. To retrieve an id token your application needs to make an HTTP POST request to the token endpoint of the auth system.
-The token endpoint is located in the discovery document `token_endpoint` key.
-
-To make this request, the application must create a standard HTTP basic authentication header with the `client_id` as the user name and `client_secret` as the password.
-
-#### Request
-The request must contain the following form-urlencoded parameter:
-
-| Parameter | Description |
-|-----------|-------------|
-| grant_type | This must contain the value `client_credentials` as specified by the OAuth 2 specification. |
-
-The raw HTTP request may look like this:
-
-```
-POST /oauth2/token HTTP/1.1
-Host: accounts.pdk.io
-Content-Type: application/x-www-form-urlencoded
-Basic MmE2NmEzNzlkZjgzYjU1NzE2YTNhZWU5Mjk0ZWYxNjU6eW91cl9jbGllbnRfc2VjcmV0
-
-grant_type=client_credentials
-```
-
-#### Response
-
-The response to the POST request is JSON formatted data containing the access, and id tokens.
-
-| Value | Description |
-|-------|-------------|
-| access_token | The access token that may now be used for making requests to the user info endpoint. |
-| id_token | The token to use for making auth API requests. This is an encoded JWT that contains information on the authenticated user. It is described in the Token Types section. |
-| token_type | The type of access token returned, this is currently always `Bearer`. |
-| expires_in | Expiration time of the Access Token in seconds since the response was generated |
-
-An example JSON encoded response may look like this:
-
-```
-{
-  "access_token":"SlAV32hkKG"
-  "id_token":"eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiJ9...GmUdC2H13YMCwc30Z3l5RCrbwQ",
-  "token_type":"Bearer",
-  "expires_in": 3600
-}
-```
-
-> *NOTE*: This authentication flow does not require the use of refresh tokens as the client can retrieve a fresh token from the token endpoint, without user-interaction, at any time.
-
-### 2. Make API Requests
-This valid ID token can now be used to make authenticated requests to the PDK auth APIs.
-This is done by including the `id_token` in the Bearer type Authorization header of your requests.
-
-The Authorization header should look similar to:
-
-    Authorization: Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiJ9...GmUdC2H13YMCwc30Z3l5RCrbwQ
-
-
 
 ## Implicit Client Flow
 
