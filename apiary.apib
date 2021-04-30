@@ -409,6 +409,87 @@ An example JSON encoded response may look like this:
 # Group Users
 The User entity represents a user login identity used for authentication and authorization against the system.
 
+# Group Authdevices
+
+### Register Authdevice [POST /authdevices]
+
++ Request
+
+    + uuid (required, string) uuid of the device.
+    + pnsToken (required, string) pnsToken.
+    + publicKey (required, string) publicKey.
+    + manufacturer (required, string) A manufacturer of the deive.
+    + model (required, string) A model of the device.
+    + osVersion (required, string) OS version of the device.
+    + location (optional, array) A location of the device.
+
+    + Headers
+    
+            Authorization: Bearer {token}
+
++ Response 200
++ Response 400 (application/json)
++ Response 401 (application/json)
++ Response 404 (application/json)
+
+### Accept Authdevice [POST /authdevices/accept]
+
++ Request
+
+    + inviteId (required, string) An invite id of the device.
+
+    + Headers
+    
+            Authorization: Bearer {token}
+
++ Response 200
++ Response 400 (application/json)
++ Response 401 (application/json)
++ Response 404 (application/json)
+
+# Group Credentials
+
+## People [/credentials/people]
+
+### Create Credential [POST]
+
++ Request
+
+    + email (required, string) Email of the person.
+    + panelId (required, string) An id of the panel.
+    + personId (required, number) An id of the person.
+    + credentialId (required, number) An id of the credential.
+    + types (required, array) A type of the credential.
+        + Members
+            + `token`
+            + `touch`
+
+    + Headers
+    
+            Authorization: Bearer {token}
+
++ Response 200
++ Response 400 (application/json)
++ Response 401 (application/json)
++ Response 404 (application/json)
+
+### Delete Credential [DELETE]
+
++ Request
+
+    + panelId (required, string) An id of the panel.
+    + credentialId (optional, number) An id of the credential.
+    + personId (optional, number) An id of the person.
+
+    + Headers
+    
+            Authorization: Bearer {token}
+
++ Response 200
++ Response 400 (application/json)
++ Response 401 (application/json)
++ Response 404 (application/json)
+
 # Group Panels
 The Panel entity represents the configuration of the cloud node customer premise equipment.
 This hardware hosts the PDK Panel API, and executes operations of the system at a site.
@@ -613,6 +694,103 @@ This represents the OU where the currently authenticated user is assigned permis
 + Response 200
 
     [Organizational Unit][]
+
+## Permissions [/ous/{ou_id}/permissions]
+
+### Create Permissions for Specific OU [POST /ous/{ou_id}/permissions]
+
++ Request
+
+    + email (required, string) Email of the person.
+    + role (required, string) An role of the person.
+
+    + Headers
+    
+            Authorization: Bearer {token}
+
++ Response 200
++ Response 400 (application/json)
++ Response 401 (application/json)
++ Response 404 (application/json)
+
+### Create Permissions [POST /ous/mine/permissions]
+
++ Request
+
+    + email (required, string) Email of the person.
+    + role (required, string) An role of the person.
+
+    + Headers
+    
+            Authorization: Bearer {token}
+
++ Response 200
++ Response 400 (application/json)
++ Response 401 (application/json)
++ Response 404 (application/json)
+
+### Delete Permissions for Specific OU [DELETE /ous/{ou_id}/permissions/{id}]
+
++ Parameters
+    
+    + ou_id (required, number) ... An id of the ou.
+    + id (required, number) ... An id of the permission.
+
++ Request
+
+    + Headers
+    
+            Authorization: Bearer {token}
+
++ Response 200
++ Response 400 (application/json)
++ Response 401 (application/json)
++ Response 404 (application/json)
+
+### Delete Permissions [DELETE /ous/mine/permissions/{id}]
+
++ Parameters
+    
+    + id (required, number) ... An id of the permission.
+
++ Request
+
+    + Headers
+    
+            Authorization: Bearer {token}
+
++ Response 200
++ Response 400 (application/json)
++ Response 401 (application/json)
++ Response 404 (application/json)
+
+## Ancestor Permissions [/ous/{ou_id}/ancestorPermissions]
+
+### Retrieve Ancestor Permissions for Specific OU [GET /ous/{ou_id}/ancestorPermissions]
+
++ Request
+
+    + Headers
+    
+            Authorization: Bearer {token}
+
++ Response 200
++ Response 400 (application/json)
++ Response 401 (application/json)
++ Response 404 (application/json)
+
+### Retrieve Ancestor Permissions [GET /ous/mine/ancestorPermissions]
+
++ Request
+
+    + Headers
+    
+            Authorization: Bearer {token}
+
++ Response 200
++ Response 400 (application/json)
++ Response 401 (application/json)
++ Response 404 (application/json)
     
 # Group Webhooks
     
